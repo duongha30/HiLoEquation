@@ -17,6 +17,7 @@
   },
   "devDependencies": {
     "@prisma/adapter-pg": "^7.4.2",
+    "@types/express": "^5.0.6",
     "bcrypt": "^6.0.0",
     "compress": "^0.99.0",
     "compression": "^1.8.1",

@@ -1,8 +1,9 @@
+import { useDraggable } from '@dnd-kit/react';
 import styles from './Card.module.css';
 import type { CardData } from '../../types/card';
 
 type CardProps = {
-  number: number;
+  card: CardData;
   faceDown?: boolean;
 };
 
@@ -14,6 +15,10 @@ const SUIT_LABEL: Record<string, string> = {
 };
 
 export const Card = ({ card, faceDown = false }: CardProps) => {
+  const { ref, isDragging } = useDraggable({
+    id: card.id,
+  });
+
   const suitClass = styles[card.suit];
   const label =
     card.type === 'number'
@@ -23,7 +28,14 @@ export const Card = ({ card, faceDown = false }: CardProps) => {
         : '×';
 
   return (
-    <div className={`${styles.container} ${suitClass}`}>
+    <div
+      ref={ref}
+      className={`${styles.container} ${suitClass}`}
+      style={{
+        cursor: isDragging ? 'grabbing' : 'grab',
+        touchAction: 'none',
+      }}
+    >
       {faceDown ? (
         <div className={styles.faceDown} />
       ) : (

@@ -1,0 +1,12 @@
+.container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: auto;
+    min-height: 27vh;
+    width: 60vw;
+    position: fixed;
+    bottom: 0%;
+    left: 20%;
+    border: 1px solid red;
+}

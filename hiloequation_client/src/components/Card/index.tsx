@@ -19,8 +19,8 @@ export const Card = ({ card, faceDown = false }: CardProps) => {
     card.type === 'number'
       ? String(card.value)
       : card.type === 'sqrt'
-      ? '√'
-      : '×';
+        ? '√'
+        : '×';
 
   return (
     <div className={`${styles.container} ${suitClass}`}>

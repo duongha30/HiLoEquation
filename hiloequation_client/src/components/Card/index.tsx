@@ -6,6 +6,8 @@ type CardProps = {
   card: CardData;
   faceDown?: boolean;
   droppable?: boolean;
+  onMount?: (id: string, el: HTMLElement | null) => void;
+  translateX?: number;
 };
 
 const SUIT_LABEL: Record<string, string> = {
@@ -15,7 +17,7 @@ const SUIT_LABEL: Record<string, string> = {
   black: '♣',
 };
 
-export const Card = ({ card, faceDown = false, droppable = false }: CardProps) => {
+export const Card = ({ card, faceDown = false, droppable = false, onMount, translateX }: CardProps) => {
   const { ref: dragRef, isDragging } = useDraggable({ id: card.id });
   const { ref: dropRef } = useDroppable({ id: card.id, disabled: !droppable });
 
@@ -31,13 +33,14 @@ export const Card = ({ card, faceDown = false, droppable = false }: CardProps) =
 
   return (
     <div
-      ref={(node) => { dragRef(node); dropRef(node); }}
+      ref={(node) => { dragRef(node); dropRef(node); onMount?.(card.id, node); }}
       className={`${styles.container} ${suitClass}`}
       style={{
         cursor: isDragging ? 'grabbing' : 'grab',
         touchAction: 'none',
         opacity: isDragging ? 0.9 : 1,
-        transition: 'outline 0.1s',
+        transform: translateX !== undefined ? `translateX(${translateX}px)` : undefined,
+        transition: translateX !== undefined ? 'transform 0.2s ease' : 'outline 0.1s',
       }}
     >
       {faceDown ? (

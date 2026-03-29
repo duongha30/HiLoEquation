@@ -1,3 +1,5 @@
+"use strict"
+
 import 'dotenv/config';
 import express from 'express';
 const app = express();
@@ -15,6 +17,7 @@ app.use(express.urlencoded({
 }));
 
 // init db
+import './init.db.js';
 // const { checkOverLoad } = require('./helpers/check.connect');
 // checkOverLoad();
 

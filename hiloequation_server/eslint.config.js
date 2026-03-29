@@ -34,7 +34,7 @@ export default [
       'space-in-parens': 'error',
       'space-infix-ops': 'error',
       'space-unary-ops': 'error',
-      'quotes': ['error', 'single'],
+      'quotes': ['error', 'single', 'double'],
       'max-len': ['error', { 'code': 200 }],
       'max-lines': ['error', { 'max': 500 }],
       'keyword-spacing': 'error',

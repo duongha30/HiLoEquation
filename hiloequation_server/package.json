@@ -8,19 +8,16 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node --watch server.js",
-    "prisma": "npx prisma generate"
+    "start": "node --watch server.js"
   },
   "dependencies": {
-    "@prisma/client": "^7.4.2",
     "express": "^5.2.1",
+    "mongoose": "^9.4.1",
     "pg": "^8.20.0",
     "socket.io": "^4.8.3"
   },
   "devDependencies": {
-    "@prisma/adapter-pg": "^7.4.2",
     "@types/express": "^5.0.6",
-    "@types/pg": "^8.20.0",
     "bcrypt": "^6.0.0",
     "compress": "^0.99.0",
     "compression": "^1.8.1",
@@ -32,7 +29,6 @@
     "jsonwebtoken": "^9.0.3",
     "lodash": "^4.17.23",
     "morgan": "^1.10.1",
-    "prisma": "^7.6.0",
     "typescript-eslint": "^8.57.0"
   }
 }

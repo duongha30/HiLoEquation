@@ -1,11 +1,12 @@
-"use strict"
+'use strict';
 
-import 'dotenv/config';
-import express from 'express';
+require('dotenv/config');
+const express = require('express');
 const app = express();
-import morgan from 'morgan';
-import helmet from 'helmet';
-import compression from 'compression';
+const morgan = require('morgan');
+const helmet = require('helmet');
+const compression = require('compression');
+const routers = require('./routes/index');
 
 // init middlewares
 app.use(morgan('dev'));
@@ -17,10 +18,12 @@ app.use(express.urlencoded({
 }));
 
 // init db
-import './init.db.js';
+require('./init.db');
 // const { checkOverLoad } = require('./helpers/check.connect');
 // checkOverLoad();
 
+//routes
+app.use('/', routers);
 
 // handling error
 app.use((req, res, next) => {
@@ -36,4 +39,4 @@ app.use((error, req, res, next) => {
     message: error.message || 'Internal Server Error'
   });
 });
-export default app;
+module.exports = app;

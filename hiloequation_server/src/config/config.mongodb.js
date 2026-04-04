@@ -40,7 +40,5 @@ const config = {
     default: dev,
 };
 const env = process.env.NODE_ENV || 'dev';
-const selectedConfig = config[env];
 
-export const { db } = selectedConfig;
-export default selectedConfig;
+module.exports = config[env];

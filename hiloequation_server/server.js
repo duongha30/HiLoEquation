@@ -1,5 +1,7 @@
-import app from './src/app.js';
-import { Server } from 'socket.io';
+'use strict';
+
+const app = require('./src/app');
+const { Server } = require('socket.io');
 
 const PORT = process.env.PORT || 4056;
 

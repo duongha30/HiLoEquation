@@ -1,8 +1,8 @@
 'use strict';
 
-import mongoose from 'mongoose'
-import { db } from './config/config.mongodb.js';
-import { countConnect } from './helpers/check.connect.js';
+const mongoose = require('mongoose');
+const { db } = require('./config/config.mongodb');
+const { countConnect } = require('./helpers/check.connect');
 const { host, name, port } = db;
 const connectString = `mongodb://${host}:${port}/${name}`;
 
@@ -31,4 +31,4 @@ class Database { //Singleton class to ensure only one instance of the database c
 }
 
 const instanceMongoDB = Database.getInstance();
-export default instanceMongoDB;
+module.exports = instanceMongoDB;

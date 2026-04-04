@@ -1,6 +1,8 @@
-import mongoose from 'mongoose';
-import process from 'process';
-import os from 'os';
+'use strict';
+
+const mongoose = require('mongoose');
+const process = require('process');
+const os = require('os');
 
 const MONITORING_INTERVAL = 5000;
 
@@ -24,4 +26,4 @@ const checkOverLoad = () => {
     }, MONITORING_INTERVAL);
 }
 
-export { countConnect, checkOverLoad };
+module.exports = { countConnect, checkOverLoad };

@@ -1,61 +1,34 @@
-"use strict"
+'use strict';
 
-import "dotenv/config";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "./generated/prisma/index.js";
+import mongoose from 'mongoose'
+import { db } from './config/config.mongodb.js';
+import { countConnect } from './helpers/check.connect.js';
+const { host, name, port } = db;
+const connectString = `mongodb://${host}:${port}/${name}`;
 
-const dev = {
-    database_url: process.env.DATABASE_URL_DEV || ''
-};
-const prod = {
-    database_url: process.env.DATABASE_URL_PROD || ''
-};
-export const config = { dev, prod };
-const env = process.env.NODE_ENV || 'dev';
-const connectionString = `${config[env]}`;
-const adapter = new PrismaPg({ connectionString });
-const prisma = new PrismaClient({ adapter });
-
-class Database {
-    constructor(type = 'mongo') {
-        this.connect(type);
+class Database { //Singleton class to ensure only one instance of the database connection is created
+    constructor() {
+        this.connect();
     }
 
-    connect(type) {
-        if (type === 'mongodb') {
-            //mongo
-        } else if (type === 'postgresql') {
-            try {
-                prisma.$connect()
-                console.log("database connected!")
-            } catch (error) {
-                console.log('error in database connection: ', error)
-            }
-        }
+    connect(type = 'mongodb') {
+        mongoose.connect(connectString, {
+            maxPoolSize: 10, // Maximum number of connections in the pool
+        }).then(() => {
+            console.log('MongoDB connected', countConnect());
+        })
+            .catch((err) => {
+                console.error('MongoDB connection error:', err);
+            });
     }
 
-    disconnect() {
-        if (type === 'mongodb') {
-            //mongo
-        } else if (type === 'postgresql') {
-            try {
-                prisma.$disconnect();
-            } catch (error) {
-                console.log('error in database disconnection: ', error)
-                prisma.$disconnect();
-                process.exit(1);
-            }
-        }
-    }
-
-    static getInstance(type) {
+    static getInstance() {
         if (!Database.instance) {
-            Database.instance = new Database(type);
+            Database.instance = new Database();
         }
-
         return Database.instance;
     }
 }
 
-
-export const instanceDB = Database.getInstance("postgresql");
+const instanceMongoDB = Database.getInstance();
+export default instanceMongoDB;

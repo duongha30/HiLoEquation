@@ -1,0 +1,33 @@
+/* ─── Play button ──────────────────────────────────────── */
+.buttonContainer {
+    font-family: 'Georgia', serif;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    color: #1a0e00;
+    background: linear-gradient(180deg, #ffe566 0%, #ffd700 45%, #b8860b 100%);
+    border: none;
+    border-radius: 8px;
+    padding: 14px 48px;
+    cursor: pointer;
+    box-shadow: 0 0 18px #ffd70099, 0 4px 12px #00000066;
+    transition: transform 0.15s, box-shadow 0.15s;
+    animation: btnPulse 2s ease-in-out infinite;
+}
+
+.buttonContainer:hover {
+    transform: scale(1.06);
+    box-shadow: 0 0 32px #ffd700cc, 0 4px 16px #00000088;
+}
+
+@keyframes btnPulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 18px #ffd70099, 0 4px 12px #00000066;
+    }
+
+    50% {
+        box-shadow: 0 0 32px #ffd700dd, 0 4px 16px #00000088;
+    }
+}

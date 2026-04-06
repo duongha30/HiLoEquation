@@ -3,10 +3,14 @@ import type { Reducer, UnknownAction } from '@reduxjs/toolkit';
 import { createMigrate, createTransform, persistStore, persistReducer } from 'redux-persist';
 import type { PersistPartial } from 'redux-persist/es/persistReducer';
 import type { Storage } from 'redux-persist';
+import roomReducer from './reducers/room';
+import socketReducer from './reducers/socket';
 
 type PersistedRootState = RootState & PersistPartial;
 
 export const rootReducer = combineReducers({
+  roomReducer,
+  socketReducer,
 });
 
 export const initStore = (storage: Storage) => {

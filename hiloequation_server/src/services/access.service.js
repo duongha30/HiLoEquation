@@ -41,7 +41,7 @@ class AccessService {
         });
 
         if (!keyStore) {
-            throw new BadRequestError('Failed to create public key');
+            throw new BadRequestError('Failed to store keys');
         }
 
         const tokenPair = await createTokenPair({

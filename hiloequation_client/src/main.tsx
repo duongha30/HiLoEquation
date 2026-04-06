@@ -6,6 +6,8 @@ import './index.css'
 import App from './App.tsx'
 import { initStore } from './store/store.ts'
 import localForage from 'localforage';
+import { BrowserRouter } from "react-router";
+
 
 const { persistor, store } = initStore(localForage);
 
@@ -13,7 +15,9 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
-        <App />
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
       </PersistGate>
     </Provider>
   </StrictMode>,

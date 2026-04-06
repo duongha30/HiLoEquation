@@ -2,6 +2,7 @@
 
 const express = require('express');
 const roomRouter = require('./room/index');
+const accessRouter = require('./access/index');
 const router = express.Router();
 
 //check api key
@@ -9,6 +10,7 @@ const router = express.Router();
 // //check permission
 // router.use(checkApiKeyPermission('0000'));
 
+router.use('/v1/api', accessRouter);
 router.use('/v1/api', roomRouter);
 
 module.exports = router;

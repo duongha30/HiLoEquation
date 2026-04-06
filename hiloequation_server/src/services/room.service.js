@@ -1,7 +1,7 @@
 'use strict';
 
 const { BadRequestError } = require('../core/error.response');
-const { RoomModel } = require('../models/Room.model');
+const RoomModel = require('../models/Room.model');
 
 class RoomService {
     constructor({ code, status = 'WAITING', maxPlayers = 4, password, hostId, players = [] }) {

@@ -1,11 +1,20 @@
 import { useNavigate } from "react-router";
 import styles from './Home.module.css'
 import { Button } from "@/components";
+import { createRoom } from "@/store";
+import { useAppDispatch } from "@/store/hooks";
 
 const DOT_COUNT = 28;
 
 export const Home = () => {
     const navigate = useNavigate();
+    const dispatch = useAppDispatch();
+    const handleCreateRoom = () => {
+        dispatch(createRoom())
+            .then(() => {
+                navigate('/room/1293');
+            });
+    };
     return (
         <div className={styles.container}>
             <div className={styles.banner}>
@@ -33,7 +42,7 @@ export const Home = () => {
             </div>
 
             <div className={styles.buttonsSection}>
-                <Button text="Create Room" onClick={() => navigate('/room/1293')} />
+                <Button text="Create Room" onClick={handleCreateRoom} />
             </div>
         </div>
     )

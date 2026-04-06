@@ -8,6 +8,12 @@ const { getInfoData, generateAuthTokens } = require('../utils');
 const { findByEmail } = require('./player.service');
 
 class AccessService {
+    static async logout({ keyStore }) {
+        console.log('keyStore', keyStore)
+        const delKey = await keyTokenService.removeKeyById(keyStore._id);
+        return delKey;
+    }
+
     static async login(req) {
         const { email, password, refreshToken = null } = req;
         const player = await findByEmail({ email });

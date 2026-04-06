@@ -1,20 +1,46 @@
 'use strict';
 
 const bcrypt = require('bcrypt');
-const crypto = require('crypto');
-const { BadRequestError } = require('../core/error.response');
+const { BadRequestError, UnauthorizedError } = require('../core/error.response');
 const playerModel = require('../models/Player.model');
 const keyTokenService = require('../services/keyToken.service');
-const { createTokenPair } = require('../auth/authUtils');
-const { getInfoData } = require('../utils');
-
+const { getInfoData, generateAuthTokens } = require('../utils');
+const { findByEmail } = require('./player.service');
 
 class AccessService {
+    static async login(req) {
+        const { email, password, refreshToken = null } = req;
+        const player = await findByEmail({ email });
+        if (!player) throw new BadRequestError({ message: 'User not found' })
+
+        const isMatching = bcrypt.compare(password, player.password);
+        if (!isMatching) throw new UnauthorizedError({ message: 'Authentication error' })
+
+        const { tokenPair, privateKey, publicKey } = await generateAuthTokens({ user: player, email });
+        const keyStore = await keyTokenService.createKeyToken({
+            userId: player._id,
+            publicKey,
+            privateKey,
+            refreshToken: tokenPair.refreshToken,
+        });
+        if (!keyStore) {
+            throw new BadRequestError({ message: 'Failed to store keys' });
+        }
+        return {
+            user: getInfoData({
+                fields: ['_id', 'name', 'email'],
+                object: player,
+            }),
+            tokens: tokenPair,
+        }
+    }
+
     static async signUp(req) {
         const { name, email, password } = req;
+        console.log('email', email)
         const player = await playerModel.findOne({ email }).lean();
         if (!!player) {
-            throw new BadRequestError('player already existing!');
+            throw new BadRequestError({ message: 'player already existing!' });
         }
 
         const passwordHash = await bcrypt.hash(password, 10);
@@ -26,31 +52,22 @@ class AccessService {
         });
 
         if (!newPlayer) {
-            throw new BadRequestError('Failed to create player');
+            throw new BadRequestError({ message: 'Failed to create player' });
         }
+        const { tokenPair, privateKey, publicKey } = await generateAuthTokens({ user: newPlayer, email });
 
-        const { privateKey, publicKey } = crypto.generateKeyPairSync('rsa', {
-            modulusLength: 2048,
-            publicKeyEncoding: { type: 'pkcs1', format: 'pem' },
-            privateKeyEncoding: { type: 'pkcs1', format: 'pem' },
-        });
         const keyStore = await keyTokenService.createKeyToken({
             userId: newPlayer._id,
             publicKey,
             privateKey,
+            refreshToken: tokenPair.refreshToken,
         });
 
         if (!keyStore) {
-            throw new BadRequestError('Failed to store keys');
+            throw new BadRequestError({ message: 'Failed to store keys' });
         }
 
-        const tokenPair = await createTokenPair({
-            userId: newPlayer._id,
-            email,
-        }, publicKey, privateKey);
-
         return {
-            code: '201',
             user: getInfoData({
                 fields: ['_id', 'name', 'email'],
                 object: newPlayer,

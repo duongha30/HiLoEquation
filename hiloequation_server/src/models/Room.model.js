@@ -35,7 +35,6 @@ const RoomSchema = new Schema({
     timestamps: true,
     collection: COLLECTION_NAME,
 });
-const RoomModel = model(DOCUMENT_NAME, RoomSchema);
 
-module.exports = { RoomModel };
+module.exports = model(DOCUMENT_NAME, RoomSchema);
 

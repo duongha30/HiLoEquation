@@ -79,8 +79,36 @@ const authentication = asyncHandler(async (req, res, next) => {
     }
 });
 
+const socketAuth = async (socket) => {
+    const { accessToken, refreshToken, userId } = socket.handshake.auth;
+    if (!userId) throw new UnauthorizedError({ message: 'Invalid Request' });
+
+    const keyStore = await KeyTokenService.fincByUserId(userId);
+    if (!keyStore) throw new UnauthorizedError({ message: 'Keys Not Found' });
+
+    if (refreshToken) {
+        try {
+            const decodeUser = await verifyJWT(refreshToken, keyStore.privateKey);
+            if (userId !== decodeUser.userId) throw new UnauthorizedError({ message: 'Invalid User Id' });
+            return { keyStore, decodeUser };
+        } catch (error) {
+            throw new UnauthorizedError({ message: error })
+        }
+    }
+    if (!accessToken) throw new UnauthorizedError({ message: 'Invalid Request. No accessToken' });
+
+    try {
+        const decodeUser = await verifyJWT(accessToken, keyStore.privateKey);
+        if (userId !== decodeUser.userId) throw new UnauthorizedError({ message: 'Invalid User Id' });
+        return { keyStore, decodeUser };
+    } catch (error) {
+        throw new UnauthorizedError({ message: error })
+    }
+};
+
 module.exports = {
     createTokenPair,
     verifyJWT,
     authentication,
+    socketAuth,
 }

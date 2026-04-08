@@ -5,11 +5,6 @@ const DOCUMENT_NAME = 'Room';
 const COLLECTION_NAME = 'Room';
 
 const RoomSchema = new Schema({
-    code: {
-        type: String,
-        required: true,
-        unique: true,
-    },
     status: {
         type: String,
         enum: ['WAITING', 'PLAYING', 'FINISHED'],
@@ -21,6 +16,7 @@ const RoomSchema = new Schema({
     },
     password: {
         type: String,
+        unique: true,
     },
     hostId: {
         type: Types.ObjectId,

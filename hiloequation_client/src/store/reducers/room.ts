@@ -5,7 +5,6 @@ import { createRoom, createRoomCases } from '../actions/room';
 
 type Room = {
     roomId: string;
-    code: string;
     status: 'idle' | 'loading' | 'failed';
     roomStatus: 'WAITING' | 'PLAYING' | 'FINISHED';
     maxPlayers: number;

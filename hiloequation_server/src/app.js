@@ -6,9 +6,15 @@ const app = express();
 const morgan = require('morgan');
 const helmet = require('helmet');
 const compression = require('compression');
+const cors = require('cors');
 const routers = require('./routes/index');
 
 // init middlewares
+app.use(cors({
+  origin: 'http://localhost:3000',
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  credentials: true,
+}));
 app.use(morgan('dev'));
 app.use(helmet());
 app.use(compression());

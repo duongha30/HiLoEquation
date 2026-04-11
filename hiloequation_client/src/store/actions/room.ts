@@ -1,5 +1,9 @@
 import { createAppAsyncThunk, type AppAsyncThunkActionCases } from '../hooks';
 import { retryRequest } from '../api/retryRequest';
+import { getSocket } from '../socket/socket';
+import { post } from '../api/post';
+import type { CreateRoomResponse } from '@/types/room';
+import { CREATE_ROOM } from '../socket/events';
 
 type FetchRoomsResponse = {
     rooms: { roomId: string; code: string; status: string }[];
@@ -30,14 +34,30 @@ export const fetchRooms = createAppAsyncThunk(
 
 export const createRoom = createAppAsyncThunk(
     'room/createRoom',
-    async (_, { signal, rejectWithValue }) => {
+    async () => {
         try {
-            // TODO: call create room API here
+            //TODO: get hostId from auth state 
+            const { metadata }: CreateRoomResponse = await post('/room/create', {
+                password: "secret",
+                hostId: "69d3e1aa55b4bc1d1f9dacaa",
+                maxPlayers: 4
+            });
+            console.log('metadata', metadata)
+            const socket = getSocket();
+            console.log('socket', socket)
+            if (metadata) {
+                //TODO: emit event with 
+                socket.emit(CREATE_ROOM, {
+                    roomId: metadata._id,
+                });
+            }
+            return metadata;
         } catch (err) {
             if (err instanceof DOMException && err.name === 'AbortError') {
                 throw err; // let RTK handle the cancellation
             }
-            return rejectWithValue((err as Error).message);
+            console.log('createRoom error: ', err)
+            return null;
         }
     },
 );
@@ -46,7 +66,7 @@ export const createRoomCases: AppAsyncThunkActionCases<
     'roomReducer',
     typeof createRoom
 > = {
-    fulfilled: (state, action) => {
+    fulfilled: (state) => {
         state.status = 'idle';
     },
     rejected: (state) => {

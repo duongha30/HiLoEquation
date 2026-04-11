@@ -11,6 +11,7 @@ export const connectSocketThunk = createAppAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             const socket = await connectSocket();
+            console.log('socket', socket)
             // Return only serializable data — never put Socket instances in Redux
             return { connected: socket.connected, id: socket.id } satisfies SocketMeta;
         } catch (err) {
@@ -29,6 +30,7 @@ export const connectSocketThunkCases: AppAsyncThunkActionCases<
     fulfilled: (state, action) => {
         state.status = 'idle';
         state.socket = action.payload;
+        state.isConnected = true;
     },
     rejected: (state) => {
         state.status = 'failed';

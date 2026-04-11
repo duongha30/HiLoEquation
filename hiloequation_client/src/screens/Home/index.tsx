@@ -3,18 +3,40 @@ import styles from './Home.module.css'
 import { Button } from "@/components";
 import { createRoom } from "@/store";
 import { useAppDispatch } from "@/store/hooks";
+import { useEffect } from "react";
+import { connectSocketThunk } from "@/store/actions/socket";
+import { disconnectSocket } from '@/store/socket/socket';
+import { selectIsSocketConnected, disconnectSocketReducer } from '@/store';
+import { useSelector } from 'react-redux';
 
 const DOT_COUNT = 28;
 
 export const Home = () => {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
+    const isConnected = useSelector(selectIsSocketConnected);
+
     const handleCreateRoom = () => {
         dispatch(createRoom())
-            .then(() => {
-                navigate('/room/1293');
+            .then(({ payload }: any) => {
+                if (payload) {
+                    navigate(`/room/${payload._id}`);
+                }
             });
     };
+    useEffect(() => {
+        // TODO: should connect to socket after login
+        dispatch(connectSocketThunk()).then((data) => {
+            console.log('connectSocketThunk home: ', data)
+        });
+        return () => {
+            console.log('isConnected', isConnected)
+            if (isConnected) {
+                disconnectSocket();
+                dispatch(disconnectSocketReducer());
+            }
+        };
+    }, []);
     return (
         <div className={styles.container}>
             <div className={styles.banner}>

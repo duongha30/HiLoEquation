@@ -1,4 +1,4 @@
 {
     "API_BASE_URL": "http://localhost:4056/v1/api",
-    "SOCKET_URL": "http://localhost:4056/"
+    "SOCKET_URL": "http://localhost:4055"
 }

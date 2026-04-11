@@ -6,9 +6,6 @@ import { Deck, Player } from '@/components';
 import { createDeck, shuffleDeck, deliverRound1, deliverRound2 } from '@/utils/deck';
 import { DEFAULT_OPERATION_CARDS } from '@/types/card';
 import type { CardData } from '@/types/card';
-import { useAppDispatch } from '@/store/hooks';
-import { connectSocketThunk } from '@/store/actions/socket';
-import { disconnectSocket } from '@/store/socket/socket';
 
 export const Room = () => {
   const [deckCards, setDeckCards] = useState<CardData[]>(() => shuffleDeck(createDeck()));
@@ -16,27 +13,13 @@ export const Room = () => {
   const [deliveryCount, setDeliveryCount] = useState(0);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [cardTranslates, setCardTranslates] = useState<Record<string, number>>({});
-  const dispatch = useAppDispatch();
+
 
   const cardRefs = useRef<Map<string, HTMLElement>>(new Map());
   const snapRects = useRef<Map<string, DOMRect>>(new Map()); // Snapshotted rects of all player cards at the moment drag starts
   const insertAtRef = useRef<number>(0); // Tracks where the dragged card would land if dropped right now
   const playerCardsRef = useRef(playerCards);
   useEffect(() => { playerCardsRef.current = playerCards; }, [playerCards]);
-
-  useEffect(() => {
-    let active = true;
-
-    dispatch(connectSocketThunk()).then(() => {
-      // StrictMode: if cleanup already ran before connect resolved, disconnect immediately
-      if (!active) disconnectSocket();
-    });
-
-    return () => {
-      active = false;
-      disconnectSocket();
-    };
-  }, [dispatch]);
 
   const handleDragStart = (event: DragStartEvent) => {
     const sourceId = event.operation.source?.id as string;

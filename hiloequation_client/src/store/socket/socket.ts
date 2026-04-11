@@ -13,7 +13,7 @@ export const connectSocket = async (): Promise<Socket> => {
 
     if (!socket) {
         socket = io(socketURL, {
-            // auth: { token },
+            // auth: { token }, // TODO: add auth token retrieval from cookie
         });
 
         await new Promise((resolve, reject) => {

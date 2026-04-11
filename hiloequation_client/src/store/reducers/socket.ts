@@ -10,23 +10,29 @@ type SocketState = {
 type SocketReducerState = {
     status: 'idle' | 'loading' | 'failed';
     socket: SocketState;
+    isConnected: boolean;
 };
 
 const initialState: SocketReducerState = {
     status: 'idle',
     socket: null,
+    isConnected: false,
 };
 
 const socketSlice = createSlice({
     name: 'socket',
     initialState,
-    reducers: {},
+    reducers: {
+        disconnectSocketReducer: state => {
+            state.isConnected = false;
+        },
+    },
     extraReducers: builder => {
         compositeBuilder<'socketReducer'>(builder)
             .addCases(connectSocketThunk, connectSocketThunkCases)
     },
 });
-
+export const { disconnectSocketReducer } = socketSlice.actions;
 // export from reducers
 // export const { } = socketSlice.actions;
 

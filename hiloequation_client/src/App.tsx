@@ -57,7 +57,7 @@ function App() {
   return (
     <div className={styles.container}>
       <div className={styles.audioContainer}>
-        <audio ref={audioRef} src={casinoMusic} loop preload="auto" autoPlay />
+        {/* <audio ref={audioRef} src={casinoMusic} loop preload="auto" autoPlay /> */}
         <div
           className={styles.musicControl}
           onMouseEnter={() => setShowVolume(true)}

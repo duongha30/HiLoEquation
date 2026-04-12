@@ -8,6 +8,8 @@ const helmet = require('helmet');
 const compression = require('compression');
 const cors = require('cors');
 const routers = require('./routes/index');
+const swaggerUI = require('swagger-ui-express');
+const swaggerSpec = require('./utils/swagger');
 
 // init middlewares
 app.use(cors({
@@ -22,6 +24,7 @@ app.use(express.json());
 app.use(express.urlencoded({
   extended: true
 }));
+app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerSpec));
 
 // init db
 require('./init.db');

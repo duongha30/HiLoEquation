@@ -38,8 +38,10 @@ export function shuffleDeck(deck: CardData[]): CardData[] {
 
 export function drawOnlyNumber(deck: CardData[]) {
     let d = [...deck];
+
+    if (d.length === 0) return { card: null, deck: d };
+
     while (d.length > 0) {
-        if (d.length === 0) return new Error('Deck is empty');
         const [top, ...rest] = d;
         if (top.type === 'number') return { card: top, deck: rest };
         d = [...rest, top]; // send symbol to bottom
@@ -48,26 +50,18 @@ export function drawOnlyNumber(deck: CardData[]) {
 }
 
 export function drawCard(deck: CardData[]) {
-    const d = [...deck];
-    if (d.length === 0) {
-        return new Error('Deck is empty');
-    }
+    if (deck.length === 0) return { card: null, deck };
 
+    let d = [...deck];
     const [top, ...rest] = d;
-    if (top.type === 'number') {
-        return { card: top, deck: rest };
-    }
 
+    if (top.type === 'number') return { card: top, deck: rest };
     if (top.type === 'sqrt' || top.type === 'multiply') {
         const delivered = [top];
         const result = drawOnlyNumber(rest);
 
-        if (result instanceof Error) {
-            return result;
-        }
-
         if (!result.card) {
-            return { card: delivered, deck: result.deck };
+            return { card: delivered, deck: result.deck }; // the last card may be a sqrt or multiply, but we still deliver it
         }
 
         const { card: extra, deck: newD } = result;
@@ -78,13 +72,19 @@ export function drawCard(deck: CardData[]) {
     return drawOnlyNumber(rest);
 }
 
-export function addCardIfNotExists(deck: CardData[], newCard: CardData | CardData[]): void {
-    const cardsToAdd = Array.isArray(newCard) ? newCard : [newCard];
+export function addSymbolIfNotExists(deck: CardData[], newCard: CardData | CardData[]): CardData[] {
+    if (!Array.isArray(newCard)) {
+        deck.push(newCard);
+        return deck;
+    }
 
-    for (const card of cardsToAdd) {
-        const exists = deck.some(existingCard => existingCard.id === card.id);
-        if (!exists) {
-            deck.push(card);
+    for (const card of newCard) {
+        if (card.type === 'sqrt' || card.type === 'multiply') {
+            const exists = deck.some(existingCard => existingCard.type === card.type);
+            if (!exists) {
+                deck.push(card);
+            }
         }
     }
+    return deck;
 }

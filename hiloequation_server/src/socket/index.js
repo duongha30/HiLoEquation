@@ -2,6 +2,7 @@
 
 const registerRoomHandlers = require('./handlers/room.handler');
 const registerPlayerHandlers = require('./handlers/player.handler');
+const registerGameHandlers = require('./handlers/game.handler');
 // const { socketAuth } = require('../auth/authUtils');
 
 module.exports = (io) => {
@@ -21,6 +22,7 @@ module.exports = (io) => {
 
         registerRoomHandlers(io, socket);
         registerPlayerHandlers(io, socket);
+        registerGameHandlers(io, socket);
 
         socket.on('disconnect', () => {
             console.log('[socket] disconnected:', socket.id);

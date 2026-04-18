@@ -1,5 +1,5 @@
 'use strict';
-import { addCardIfNotExists, createDeck, drawOnlyNumber, drawCard, shuffleDeck } from './deck';
+import { addSymbolIfNotExists, createDeck, drawOnlyNumber, drawCard, shuffleDeck } from './deck';
 import type {
     CardData,
     GameState,
@@ -79,7 +79,27 @@ class GameCore {
         this.gameState.delete(roomId);
     }
 
+    clearPlayer(roomId: string, playerId: string) {
+        const roomState = this.gameState.get(roomId);
+        if (!roomState) {
+            return;
+        }
+
+        if (!roomState.hands[playerId]) {
+            return;
+        }
+
+        delete roomState.hands[playerId];
+        this.gameState.set(roomId, roomState);
+        return this.getRoom(roomId);
+    }
+
     start(roomId: string, players: string[]) {
+        const roomState = this.getRequiredRoom(roomId);
+        if (!roomState) {
+            return;
+        }
+
         if (players.length === 0) {
             return;
         }
@@ -87,7 +107,7 @@ class GameCore {
         const initDeck = shuffleDeck(createDeck());
         const hands: HandsType = {};
         for (const player of players) {
-            hands[player] = {
+            hands[player] = roomState.hands[player] ?? {
                 cash: INIT_CASH,
                 score: INIT_SCORE,
                 cards: null,
@@ -98,69 +118,82 @@ class GameCore {
         return this.getRoom(roomId);
     }
 
-    deal(roomId: string, times: number, isFirstDraw = true) {
+    deal(roomId: string, playerId: string, times: number, isFirstDraw = true) {
         const roomState = this.getRequiredRoom(roomId);
         if (!roomState) {
             return;
         }
 
+        const playerState = roomState.hands[playerId];
+        if (!playerState) {
+            return;
+        }
+
         if (times <= 0) {
-            return roomState;
+            return {
+                playerState,
+                round: roomState.round,
+            };
         }
 
         const { hands, deck: initialDeck } = roomState;
         let currentDeck = initialDeck;
-        const newHands: HandsType = {};
+        const hasSymbolCard = playerState.cards?.some(
+            (card) => card.type === 'sqrt' || card.type === 'multiply'
+        );
 
-        for (const playerId in hands) {
-            const playerState = hands[playerId];
-            const hasSymbolCard = playerState.cards?.some(
-                (card) => card.type === 'sqrt' || card.type === 'multiply'
-            );
+        let drawnCards: CardData[] = [];
+        for (let i = 0; i < times; i++) {
+            const result = (isFirstDraw || hasSymbolCard)
+                ? drawOnlyNumber(currentDeck)
+                : drawCard(currentDeck);
 
-            const drawnCards: CardData[] = [];
-            for (let i = 0; i < times; i++) {
-                const result = (isFirstDraw || hasSymbolCard)
-                    ? drawOnlyNumber(currentDeck)
-                    : drawCard(currentDeck);
-
-                if (result instanceof Error || !result) {
-                    continue;
-                }
-
-                const { card, deck: remainingDeck } = result;
-                currentDeck = remainingDeck;
-
-                if (card) {
-                    addCardIfNotExists(drawnCards, card);
-                }
+            if (result instanceof Error || !result) {
+                continue;
             }
 
-            const shouldAddDefaultOps = isFirstDraw && (playerState.cards ?? []).length === 0;
-            const defaultOperationCards = shouldAddDefaultOps
-                ? DEFAULT_OPERATION_CARDS.map((card) => ({ ...card }))
-                : [];
-
-            newHands[playerId] = {
-                cash: playerState.cash,
-                score: playerState.score,
-                bet: playerState.bet,
-                cards: [
-                    ...(playerState.cards ?? []),
-                    ...drawnCards,
-                    ...defaultOperationCards,
-                ],
-            };
+            const { card, deck: remainingDeck } = result;
+            currentDeck = remainingDeck;
+            if (card) {
+                if (Array.isArray(card)) {
+                    drawnCards = [...drawnCards, ...card];
+                } else {
+                    drawnCards.push(card);
+                }
+            }
         }
+
+        const shouldAddDefaultOps = isFirstDraw && (playerState.cards ?? []).length === 0;
+        const defaultOperationCards = shouldAddDefaultOps
+            ? DEFAULT_OPERATION_CARDS.map((card) => ({ ...card }))
+            : [];
+
+        const updatedPlayer = {
+            cash: playerState.cash,
+            score: playerState.score,
+            bet: playerState.bet,
+            cards: [
+                ...(playerState.cards ?? []),
+                ...drawnCards,
+                ...defaultOperationCards,
+            ],
+        };
 
         const nextRoomState: GameState = {
             ...roomState,
-            hands: newHands,
+            hands: {
+                ...hands,
+                [playerId]: updatedPlayer,
+            },
             deck: currentDeck,
             round: roomState.round + 1,
         };
         this.gameState.set(roomId, nextRoomState);
-        return this.getRoom(roomId);
+
+        return {
+            playerState: nextRoomState.hands[playerId],
+            round: roomState.round + 1,
+        };
     }
 
     bet(roomId: string, playerId: string, betting: number) {

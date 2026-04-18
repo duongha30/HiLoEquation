@@ -1,4 +1,4 @@
 export { Card } from './Card';
 export { Deck } from './Deck';
-export { Player } from './Player';
+export { Host } from './Host';
 export { Button } from './Button';

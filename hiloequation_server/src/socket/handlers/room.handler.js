@@ -9,7 +9,7 @@ const {
     EMIT_PLAYER_JOIN,
     EMIT_PLAYER_LEAVE,
 } = require('../events');
-const { Game } = require('../../game/game.core');
+const { Game } = require('../../game');
 const { emitHandler } = require('../../utils/socketUtils');
 
 module.exports = (io, socket) => {

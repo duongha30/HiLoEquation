@@ -8,7 +8,7 @@ const {
     EMIT_BETTING,
     EMIT_FOLDING,
 } = require('../events');
-const { Game } = require('../../game/game.core');
+const { Game } = require('../../game');
 const { emitHandler } = require('../../utils/socketUtils');
 
 module.exports = (io, socket) => {

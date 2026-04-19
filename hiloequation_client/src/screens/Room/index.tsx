@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { DragDropProvider } from '@dnd-kit/react';
 import type { DragEndEvent, DragStartEvent, DragMoveEvent } from '@dnd-kit/react';
 import styles from './Room.module.css';
-import { Deck, Host } from '@/components';
+import { Deck, Host, Player } from '@/components';
 import { createDeck, shuffleDeck, deliverRound1, deliverRound2 } from '@/utils/deck';
 import { DEFAULT_OPERATION_CARDS } from '@/types/card';
 import type { CardData } from '@/types/card';
@@ -164,7 +164,7 @@ export const Room = () => {
           />
         </div>
         <Host
-          id="player"
+          id="host-player"
           cards={playerCards}
           onCardMount={(id, el) => {
             if (el) cardRefs.current.set(id, el);
@@ -172,6 +172,7 @@ export const Room = () => {
           }}
           cardTranslates={cardTranslates}
         />
+        <Player id="player-1" cards={[]} />
       </div>
     </DragDropProvider>
   );

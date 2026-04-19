@@ -1,4 +1,4 @@
-export { createRoom } from './actions/room';
+export { createRoom, joinRoom } from './actions/room';
 
 export { selectSocket, selectIsSocketConnected } from './selectors/socket';
 

@@ -1,26 +1,16 @@
 import { createSlice, createEntityAdapter } from '@reduxjs/toolkit';
 import type { RootState } from '../store';
 import { compositeBuilder } from '../hooks';
-import { createRoom, createRoomCases } from '../actions/room';
-
-type Room = {
-    roomId: string;
-    status: 'idle' | 'loading' | 'failed';
-    roomStatus: 'WAITING' | 'PLAYING' | 'FINISHED';
-    maxPlayers: number;
-    password?: string;
-    hostId: string;
-    players: string[];
-};
+import type { Room } from '../types/room';
+import { createRoom, createRoomCases, joinRoom, joinRoomCases } from '../actions/room';
 
 const roomAdapter = createEntityAdapter<Room, string>({
     selectId: room => room.roomId,
 });
 
-const initialState = roomAdapter.getInitialState<{
-    status: 'idle' | 'loading' | 'failed';
-}>({
+const initialState = roomAdapter.getInitialState<{ status: string, players: string[] }>({
     status: 'idle',
+    players: [],
 });
 
 const roomSlice = createSlice({
@@ -30,6 +20,7 @@ const roomSlice = createSlice({
     extraReducers: builder => {
         compositeBuilder<'roomReducer'>(builder)
             .addCases(createRoom, createRoomCases)
+            .addCases(joinRoom, joinRoomCases)
     },
 });
 

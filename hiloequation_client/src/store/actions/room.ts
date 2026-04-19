@@ -2,8 +2,8 @@ import { createAppAsyncThunk, type AppAsyncThunkActionCases } from '../hooks';
 import { retryRequest } from '../api/retryRequest';
 import { getSocket } from '../socket/socket';
 import { post } from '../api/post';
-import type { CreateRoomResponse } from '@/types/room';
-import { CREATE_ROOM } from '../socket/events';
+import type { CreateRoomResponse, JoinRoomResponse } from '../types/room';
+import { EMIT_JOIN_ROOM, ON_PLAYER_JOIN } from '../socket/events';
 
 type FetchRoomsResponse = {
     rooms: { roomId: string; code: string; status: string }[];
@@ -43,14 +43,14 @@ export const createRoom = createAppAsyncThunk(
                 maxPlayers: 4
             });
             console.log('metadata', metadata)
-            const socket = getSocket();
-            console.log('socket', socket)
-            if (metadata) {
-                //TODO: emit event with 
-                socket.emit(CREATE_ROOM, {
-                    roomId: metadata._id,
-                });
-            }
+            // const socket = getSocket();
+            // console.log('socket', socket)
+            // if (metadata) {
+            //     //TODO: emit event with token
+            //     socket.emit(EMIT_CREATE_ROOM, {
+            //         roomId: metadata._id,
+            //     });
+            // }
             return metadata;
         } catch (err) {
             if (err instanceof DOMException && err.name === 'AbortError') {
@@ -62,12 +62,65 @@ export const createRoom = createAppAsyncThunk(
     },
 );
 
+export const joinRoom = createAppAsyncThunk(
+    'room/joinRoom',
+    async ({ roomId, playerId, password }: { roomId: string, playerId: string, password: string }): Promise<JoinRoomResponse> => {
+        try {
+            const socket = getSocket();
+            console.log('socket', socket)
+
+            return new Promise<JoinRoomResponse>((resolve, reject) => {
+                socket.once(ON_PLAYER_JOIN, (data: JoinRoomResponse) => {
+                    console.log('ON_PLAYER_JOIN response:', data);
+                    data.roomId = roomId;
+                    resolve(data);
+                });
+
+                socket.emit(EMIT_JOIN_ROOM, {
+                    roomId,
+                    playerId,
+                    password,
+                });
+
+                setTimeout(() => {
+                    socket.off(ON_PLAYER_JOIN);
+                    reject(new Error('Join room timeout'));
+                }, 5000);
+            });
+        } catch (err) {
+            if (err instanceof DOMException && err.name === 'AbortError') {
+                throw err;
+            }
+            console.log('joinRoom error: ', err)
+            return { joinedPlayer: '', roomId: '', status: 500 };
+        }
+    },
+);
+
 export const createRoomCases: AppAsyncThunkActionCases<
     'roomReducer',
     typeof createRoom
 > = {
     fulfilled: (state) => {
         state.status = 'idle';
+    },
+    rejected: (state) => {
+        state.status = 'failed';
+    },
+    pending: (state) => {
+        state.status = 'loading';
+    },
+};
+export const joinRoomCases: AppAsyncThunkActionCases<
+    'roomReducer',
+    typeof joinRoom
+> = {
+    fulfilled: (state, action) => {
+        state.status = 'idle';
+        console.log('action.payload', action.payload)
+        if (action?.payload?.joinedPlayer && Array.isArray(state.players)) {
+            state.players = [...state.players, action.payload.joinedPlayer];
+        }
     },
     rejected: (state) => {
         state.status = 'failed';

@@ -1,8 +1,9 @@
 export type RoomStatus = 'WAITING' | 'PLAYING' | 'FINISHED';
 
 export type Room = {
-    _id: string;
-    status: RoomStatus;
+    roomId: string;
+    status: 'idle' | 'loading' | 'failed';
+    roomStatus: RoomStatus;
     maxPlayers: number;
     hostId: string;
     players: string[];
@@ -18,4 +19,10 @@ export type CreateRoomResponse = {
     status: string;
     message: string;
     metadata: Room;
+};
+
+export type JoinRoomResponse = {
+    joinedPlayer: string;
+    roomId: string;
+    status: number;
 };

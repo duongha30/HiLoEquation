@@ -1,6 +1,7 @@
 'use strict';
 
 const { BadRequestError } = require('../core/error.response');
+const { OK } = require('../core/success.response');
 const RoomModel = require('../models/Room.model');
 const { getInfoData } = require('../utils');
 
@@ -16,6 +17,25 @@ class RoomService {
             fields: ['_id', 'status', 'maxPlayers', 'hostId', 'players'],
             object: newRoom,
         });
+    }
+
+    static async getRoom({ roomId }) {
+        const room = await RoomModel.findOne({ _id: roomId });
+        if (!room) {
+            throw new BadRequestError({ message: 'No room found!' });
+        }
+        return getInfoData({
+            fields: ['_id', 'status', 'maxPlayers', 'hostId', 'players'],
+            object: room,
+        });
+    }
+
+    static async accessRoom({ roomId, password }) {
+        const room = await RoomModel.findOne({ _id: roomId, password });
+        if (!room) {
+            return new BadRequestError({ message: 'Wrong Password or room id' });
+        }
+        return new OK({});
     }
 }
 

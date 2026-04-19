@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router";
 import styles from './Home.module.css'
 import { Button } from "@/components";
-import { createRoom } from "@/store";
+import { createRoom, joinRoom } from "@/store";
 import { useAppDispatch } from "@/store/hooks";
 import { useEffect } from "react";
 import { connectSocketThunk } from "@/store/actions/socket";
@@ -24,6 +24,14 @@ export const Home = () => {
                 }
             });
     };
+    const handleJoinRoom = (roomId: string, playerId: string, password: string) => {
+        dispatch(joinRoom({ roomId, playerId, password })).then(({ payload }: any) => {
+            if (payload?.roomId) {
+                navigate(`/room/${payload.roomId}`);
+            }
+        });
+    };
+
     useEffect(() => {
         // TODO: should connect to socket after login
         dispatch(connectSocketThunk()).then((data) => {
@@ -36,7 +44,7 @@ export const Home = () => {
                 dispatch(disconnectSocketReducer());
             }
         };
-    }, []);
+    }, [isConnected]);
     return (
         <div className={styles.container}>
             <div className={styles.banner}>
@@ -65,6 +73,7 @@ export const Home = () => {
 
             <div className={styles.buttonsSection}>
                 <Button text="Create Room" onClick={handleCreateRoom} />
+                <Button text="Join Room" onClick={() => handleJoinRoom('69e3ae9c9d9dd8ff96a99b71', '69d3e1aa55b4bc1d1f9dacaa', 'secret')} />
             </div>
         </div>
     )

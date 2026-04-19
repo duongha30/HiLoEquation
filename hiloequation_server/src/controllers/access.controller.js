@@ -12,15 +12,23 @@ class AccessController {
         }).send(res);
     }
     login = async (req, res) => {
+        const result = await AccessService.login(req.body);
+        AccessService.setCookies(res, result.tokens);
         new OK({
             message: "Login successfully",
-            metadata: await AccessService.login(req.body)
+            metadata: {
+                user: result.user,
+            }
         }).send(res);
     }
     signUp = async (req, res) => {
+        const result = await AccessService.signUp(req.body);
+        AccessService.setCookies(res, result.tokens);
         new OK({
             message: "Sign up new player successfully",
-            metadata: await AccessService.signUp(req.body)
+            metadata: {
+                user: result.user,
+            }
         }).send(res);
     }
 }

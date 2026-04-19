@@ -2,39 +2,21 @@
 
 const { ReasonPhrases, StatusCodes } = require('../utils/httpStatusCode');
 
-const StatusCode = {
-    NO_CONTENT: 204,
-    BAD_REQUEST: 400,
-    UNAUTHORIZED: 401,
-    FORBIDDEN: 403,
-    NOT_FOUND: 404,
-    CONFLICT: 409,
-}
-
-const ReasonStatusCode = {
-    NO_CONTENT: 'No Content',
-    BAD_REQUEST: 'Bad Request',
-    UNAUTHORIZED: 'Unauthorized',
-    FORBIDDEN: 'Forbidden',
-    NOT_FOUND: 'Not Found',
-    CONFLICT: 'Conflict',
-}
-
 class ErrorResponse extends Error {
-    constructor({ message, status }) {
+    constructor({ message, statusCode }) {
         super(message);
-        this.status = status;
+        this.status = statusCode;
     }
 }
 
 class ConflictRequestError extends ErrorResponse {
-    constructor({ message = ReasonStatusCode.CONFLICT, statusCode = StatusCode.CONFLICT }) {
+    constructor({ message = ReasonPhrases.CONFLICT, statusCode = StatusCodes.CONFLICT }) {
         super({ message, statusCode });
     }
 }
 
 class BadRequestError extends ErrorResponse {
-    constructor({ message = ReasonStatusCode.BAD_REQUEST, statusCode = StatusCode.BAD_REQUEST }) {
+    constructor({ message = ReasonPhrases.BAD_REQUEST, statusCode = StatusCodes.BAD_REQUEST }) {
         super({ message, statusCode });
     }
 }
@@ -45,12 +27,12 @@ class UnauthorizedError extends ErrorResponse {
     }
 }
 class NotFoundError extends ErrorResponse {
-    constructor({ message = ReasonStatusCode.NOT_FOUND, statusCode = StatusCode.NOT_FOUND }) {
+    constructor({ message = ReasonPhrases.NOT_FOUND, statusCode = StatusCodes.NOT_FOUND }) {
         super({ message, statusCode });
     }
 }
 class ForbiddenError extends ErrorResponse {
-    constructor({ message = ReasonStatusCode.FORBIDDEN, statusCode = StatusCode.FORBIDDEN }) {
+    constructor({ message = ReasonPhrases.FORBIDDEN, statusCode = StatusCodes.FORBIDDEN }) {
         super({ message, statusCode });
     }
 }

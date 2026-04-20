@@ -7,6 +7,7 @@ const morgan = require('morgan');
 const helmet = require('helmet');
 const compression = require('compression');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const routers = require('./routes/index');
 const swaggerUI = require('swagger-ui-express');
 const swaggerSpec = require('./utils/swagger');
@@ -24,6 +25,7 @@ app.use(express.json());
 app.use(express.urlencoded({
   extended: true
 }));
+app.use(cookieParser());
 app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerSpec));
 
 // init db

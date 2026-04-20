@@ -41,6 +41,26 @@ class AccessService {
         }
     }
 
+    static setCookies(res, tokens) {
+        const isDev = process.env.NODE_ENV !== 'production';
+        const cookieOptions = {
+            httpOnly: true,
+            secure: !isDev,
+            sameSite: 'strict',
+            path: '/',
+        };
+
+        res.cookie('accessToken', tokens.accessToken, {
+            ...cookieOptions,
+            maxAge: 15 * 60 * 1000, // 15 minutes
+        });
+
+        res.cookie('refreshToken', tokens.refreshToken, {
+            ...cookieOptions,
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        });
+    }
+
     static async signUp(req) {
         const { name, email, password } = req;
         console.log('email', email)

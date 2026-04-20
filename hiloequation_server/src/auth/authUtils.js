@@ -52,9 +52,9 @@ const authentication = asyncHandler(async (req, res, next) => {
     const keyStore = await KeyTokenService.fincByUserId(userId);
     if (!keyStore) throw new UnauthorizedError({ message: 'Keys Not Found' });
 
-    if (req.headers[HEADER.REFRESH_TOKEN]) {
+    const refreshToken = req.cookies?.refreshToken || req.headers[HEADER.REFRESH_TOKEN];
+    if (refreshToken) {
         try {
-            const refreshToken = req.headers[HEADER.REFRESH_TOKEN];
             const decodeUser = await verifyJWT(refreshToken, keyStore.privateKey);
             if (userId !== decodeUser.userId) throw new UnauthorizedError({ message: 'Invalid User Id' });
             req.keyStore = keyStore;
@@ -64,7 +64,8 @@ const authentication = asyncHandler(async (req, res, next) => {
             throw new UnauthorizedError({ message: error })
         }
     }
-    const accessToken = req.headers[HEADER.AUTHORIZATION];
+
+    const accessToken = req.cookies?.accessToken || req.headers[HEADER.AUTHORIZATION];
     if (!accessToken) throw new UnauthorizedError({ message: 'Invalid Request. No accessToken' });
 
     try {

@@ -12,11 +12,16 @@ export const useConnectSocket = () => {
             await dispatch(connectSocketThunk());
         }
         connectSocket();
-        return () => {
-            if (isConnected) {
-                disconnectSocket();
-                dispatch(disconnectSocketReducer());
-            }
-        };
     }, [isConnected]);
+}
+
+export const useDisconnectSocket = () => {
+    const dispatch = useAppDispatch();
+
+    useEffect(() => {
+        return () => {
+            disconnectSocket();
+            dispatch(disconnectSocketReducer());
+        }
+    }, []);
 }

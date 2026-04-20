@@ -6,6 +6,7 @@ import { Deck, Host, Player } from '@/components';
 import { createDeck, shuffleDeck, deliverRound1, deliverRound2 } from '@/utils/deck';
 import { DEFAULT_OPERATION_CARDS } from '@/types/card';
 import type { CardData } from '@/types/card';
+import { useRoomSubscription } from '@/hooks';
 
 export const Room = () => {
   const [deckCards, setDeckCards] = useState<CardData[]>(() => shuffleDeck(createDeck()));
@@ -19,6 +20,7 @@ export const Room = () => {
   const snapRects = useRef<Map<string, DOMRect>>(new Map()); // Snapshotted rects of all player cards at the moment drag starts
   const insertAtRef = useRef<number>(0); // Tracks where the dragged card would land if dropped right now
   const playerCardsRef = useRef(playerCards);
+  useRoomSubscription();
   useEffect(() => { playerCardsRef.current = playerCards; }, [playerCards]);
 
   const handleDragStart = (event: DragStartEvent) => {

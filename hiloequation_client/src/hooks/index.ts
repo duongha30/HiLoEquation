@@ -1,2 +1,3 @@
 export { useCheckInternetConnection } from './useCheckInternetConnection';
-export { useConnectSocket } from './useConnectSocket';
+export { useConnectSocket, useDisconnectSocket } from './useConnectSocket';
+export { useRoomSubscription } from './useRoomSubscription';

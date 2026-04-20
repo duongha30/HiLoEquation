@@ -9,7 +9,7 @@ export const signupThunk = createAppAsyncThunk<UserMetadata, SignupPayload>(
             const response = await post<FetchUserResponse>(
                 '/signup',
                 {
-                    username,
+                    name: username,
                     email,
                     password,
                 },

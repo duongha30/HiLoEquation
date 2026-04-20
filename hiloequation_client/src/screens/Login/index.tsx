@@ -3,6 +3,8 @@ import * as Yup from 'yup'
 import styles from './Login.module.css'
 import { useNavigate } from 'react-router'
 import { url } from '@/utils/constant'
+import { useAppDispatch } from '@/store/hooks'
+import { loginThunk } from '@/store/actions/user'
 
 interface LoginFormValues {
     email: string
@@ -14,7 +16,7 @@ const loginValidationSchema = Yup.object().shape({
         .email('Invalid email address')
         .required('Email is required'),
     password: Yup.string()
-        .min(6, 'Password must be at least 6 characters')
+        .min(4, 'Password must be at least 4 characters')
         .required('Password is required'),
 })
 
@@ -25,10 +27,11 @@ const initialValues: LoginFormValues = {
 
 export function Login() {
     const navigate = useNavigate();
+    const dispatch = useAppDispatch();
     const handleSubmit = async (values: LoginFormValues, { setSubmitting }: any) => {
         try {
-            // TODO: Implement login API call here
-            console.log('Login attempt:', values)
+            const { email, password } = values;
+            await dispatch(loginThunk({ email, password }));
         } catch (error) {
             console.error('Login failed:', error)
         } finally {

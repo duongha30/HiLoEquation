@@ -3,6 +3,8 @@ import * as Yup from 'yup'
 import styles from './Signup.module.css'
 import { useNavigate } from 'react-router'
 import { url } from '@/utils/constant'
+import { useAppDispatch } from '@/store/hooks'
+import { signupThunk } from '@/store/actions/user'
 
 interface SignupFormValues {
     username: string
@@ -22,10 +24,10 @@ const signupValidationSchema = Yup.object().shape({
         .email('Invalid email address')
         .required('Email is required'),
     password: Yup.string()
-        .min(8, 'Password must be at least 8 characters')
-        .matches(/[A-Z]/, 'Password must contain at least one uppercase letter')
-        .matches(/[a-z]/, 'Password must contain at least one lowercase letter')
-        .matches(/[0-9]/, 'Password must contain at least one number')
+        .min(4, 'Password must be at least 4 characters')
+        // .matches(/[A-Z]/, 'Password must contain at least one uppercase letter')
+        // .matches(/[a-z]/, 'Password must contain at least one lowercase letter')
+        // .matches(/[0-9]/, 'Password must contain at least one number')
         .required('Password is required'),
     confirmPassword: Yup.string()
         .oneOf([Yup.ref('password')], 'Passwords must match')
@@ -44,10 +46,11 @@ const initialValues: SignupFormValues = {
 
 export const Signup = () => {
     const navigate = useNavigate();
+    const dispatch = useAppDispatch();
     const handleSubmit = async (values: SignupFormValues, { setSubmitting }: any) => {
         try {
-            // TODO: Implement signup API call here
-            console.log('Signup attempt:', values)
+            const { username, email, password } = values;
+            await dispatch(signupThunk({ username, email, password }));
         } catch (error) {
             console.error('Signup failed:', error)
         } finally {

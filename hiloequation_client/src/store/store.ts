@@ -5,12 +5,14 @@ import type { PersistPartial } from 'redux-persist/es/persistReducer';
 import type { Storage } from 'redux-persist';
 import roomReducer from './reducers/room';
 import socketReducer from './reducers/socket';
+import userReducer from './reducers/user';
 
 type PersistedRootState = RootState & PersistPartial;
 
 export const rootReducer = combineReducers({
   roomReducer,
   socketReducer,
+  userReducer,
 });
 
 export const initStore = (storage: Storage) => {

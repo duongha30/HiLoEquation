@@ -15,7 +15,7 @@ export const fetchRooms = createAppAsyncThunk(
         try {
             const data = await retryRequest<FetchRoomsResponse>(
                 (abortSignal) =>
-                    fetch('/api/rooms', { signal: abortSignal })
+                    fetch('/rooms', { signal: abortSignal })
                         .then(res => {
                             if (!res.ok) throw new Error(`HTTP ${res.status}`);
                             return res.json() as Promise<FetchRoomsResponse>;

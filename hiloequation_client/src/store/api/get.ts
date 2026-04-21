@@ -1,3 +1,4 @@
+import localforage from 'localforage';
 import APP_CONFIG from '../../config/config.json';
 import { retryRequest } from './retryRequest';
 import type { RequestHeaders } from './types';
@@ -11,12 +12,15 @@ export const get = async <T = unknown>(
     retries: number = 3,
     delayMs: number = 300,
 ): Promise<T> => {
+    const userId = await localforage.getItem<string>('userId');
     const response = await retryRequest<Response>(
         (abortSignal) =>
             fetch(`${BASE_URL}${url}`, {
                 method: 'GET',
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
+                    'x-client-id': userId || '',
                     ...headers,
                 },
                 signal: abortSignal,

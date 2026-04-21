@@ -1,3 +1,4 @@
+import localforage from 'localforage';
 import { post } from '../api/post';
 import { createAppAsyncThunk, type AppAsyncThunkActionCases } from '../hooks';
 import type { FetchUserResponse, LoginPayload, SignupPayload, UserMetadata } from '../types';
@@ -62,6 +63,7 @@ export const signupThunkCases: AppAsyncThunkActionCases<
             state.userId = _id;
             state.name = name;
             state.email = email;
+            localforage.setItem('userId', _id);
         }
     },
     rejected: (state) => {
@@ -83,6 +85,7 @@ export const loginThunkCases: AppAsyncThunkActionCases<
             state.userId = _id;
             state.name = name;
             state.email = email;
+            localforage.setItem('userId', _id);
         }
     },
     rejected: (state) => {

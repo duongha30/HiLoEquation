@@ -20,9 +20,3 @@ export type CreateRoomResponse = {
     message: string;
     metadata: Room;
 };
-
-export type JoinRoomResponse = {
-    joinedPlayer: string;
-    roomId: string;
-    status: number;
-};

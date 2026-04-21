@@ -2,27 +2,26 @@ import { createAppAsyncThunk, type AppAsyncThunkActionCases } from '../hooks';
 import { retryRequest } from '../api/retryRequest';
 import { getSocket } from '../socket/socket';
 import { post } from '../api/post';
-import type { CreateRoomResponse, JoinRoomResponse } from '../types/room';
+import type { CreateRoomResponse } from '../types/room';
+import type { JoinRoomResponse } from '../../types/socketEventType';
 import { EMIT_JOIN_ROOM, ON_PLAYER_JOIN } from '../socket/events';
+import { addPlayerToRoom } from '../reducers/room';
+import { get } from '../api/get';
 
 type FetchRoomsResponse = {
-    rooms: { roomId: string; code: string; status: string }[];
+    _id: string,
+    status: string,
+    maxPlayers: number,
+    hostId: string,
+    players: string[],
 };
 
-export const fetchRooms = createAppAsyncThunk(
-    'room/fetchAllRooms',
-    async (_, { signal, rejectWithValue }) => {
+export const fetchRoomById = createAppAsyncThunk(
+    'room/fetchRoomById',
+    async (roomId: string, { signal, rejectWithValue }) => {
         try {
-            const data = await retryRequest<FetchRoomsResponse>(
-                (abortSignal) =>
-                    fetch('/rooms', { signal: abortSignal })
-                        .then(res => {
-                            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                            return res.json() as Promise<FetchRoomsResponse>;
-                        }),
-                { retries: 3, delayMs: 300, signal }, // RTK's signal forwarded here
-            );
-            return data.rooms;
+            const data = await get<FetchRoomsResponse>(`/room/${roomId}`, {}, signal);
+            return data;
         } catch (err) {
             if (err instanceof DOMException && err.name === 'AbortError') {
                 throw err; // let RTK handle the cancellation
@@ -64,24 +63,24 @@ export const createRoom = createAppAsyncThunk(
 
 export const joinRoom = createAppAsyncThunk(
     'room/joinRoom',
-    async ({ roomId, playerId, password }: { roomId: string, playerId: string, password: string }): Promise<JoinRoomResponse> => {
+    async ({ roomId, playerId, password }: { roomId: string, playerId: string, password: string }, thunkAPI): Promise<JoinRoomResponse | void> => {
         try {
             const socket = getSocket();
-            console.log('socket', socket)
-
+            await thunkAPI.dispatch(fetchRoomById(roomId));
+            console.log('join playerId', playerId)
             return new Promise<JoinRoomResponse>((resolve, reject) => {
                 socket.once(ON_PLAYER_JOIN, (data: JoinRoomResponse) => {
-                    console.log('ON_PLAYER_JOIN response:', data);
-                    data.roomId = roomId;
+                    console.log('data', data)
+                    if (data.playerId) {
+                        thunkAPI.dispatch(addPlayerToRoom({ playerId: data.playerId }));
+                    }
                     resolve(data);
                 });
-
                 socket.emit(EMIT_JOIN_ROOM, {
                     roomId,
                     playerId,
                     password,
                 });
-
                 setTimeout(() => {
                     socket.off(ON_PLAYER_JOIN);
                     reject(new Error('Join room timeout'));
@@ -92,10 +91,30 @@ export const joinRoom = createAppAsyncThunk(
                 throw err;
             }
             console.log('joinRoom error: ', err)
-            return { joinedPlayer: '', roomId: '', status: 500 };
         }
     },
 );
+export const fetchRoomByIdCases: AppAsyncThunkActionCases<
+    'roomReducer',
+    typeof fetchRoomById
+> = {
+    fulfilled: (state, action) => {
+        state.status = 'idle';
+        if (action.payload) {
+            const { _id, status, hostId, maxPlayers } = action.payload;
+            state.id = _id;
+            state.roomStatus = status;
+            state.hostId = hostId;
+            state.maxPlayers = maxPlayers;
+        }
+    },
+    rejected: (state) => {
+        state.status = 'failed';
+    },
+    pending: (state) => {
+        state.status = 'loading';
+    },
+};
 
 export const createRoomCases: AppAsyncThunkActionCases<
     'roomReducer',
@@ -111,15 +130,16 @@ export const createRoomCases: AppAsyncThunkActionCases<
         state.status = 'loading';
     },
 };
+
 export const joinRoomCases: AppAsyncThunkActionCases<
     'roomReducer',
     typeof joinRoom
 > = {
     fulfilled: (state, action) => {
         state.status = 'idle';
-        console.log('action.payload', action.payload)
-        if (action?.payload?.joinedPlayer && Array.isArray(state.players)) {
-            state.players = [...state.players, action.payload.joinedPlayer];
+        if (action.payload?.roomId) {
+            const { roomId } = action.payload;
+            state.id = roomId;
         }
     },
     rejected: (state) => {

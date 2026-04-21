@@ -1,8 +1,8 @@
 import { useNavigate } from "react-router";
 import styles from './Home.module.css'
 import { Button } from "@/components";
-import { createRoom, joinRoom } from "@/store";
-import { useAppDispatch } from "@/store/hooks";
+import { createRoom, joinRoom, selectUserId } from "@/store";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { useConnectSocket } from "@/hooks";
 
 const DOT_COUNT = 28;
@@ -10,6 +10,7 @@ const DOT_COUNT = 28;
 export const Home = () => {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
+    const userId = useAppSelector(selectUserId);
 
     useConnectSocket();
     const handleCreateRoom = () => {
@@ -20,12 +21,11 @@ export const Home = () => {
                 }
             });
     };
-    const handleJoinRoom = (roomId: string, playerId: string, password: string) => {
-        dispatch(joinRoom({ roomId, playerId, password })).then(({ payload }: any) => {
-            if (payload?.roomId) {
-                navigate(`/room/${payload.roomId}`);
-            }
-        });
+    const handleJoinRoom = async (roomId: string, playerId: string, password: string) => {
+        const data = await dispatch(joinRoom({ roomId, playerId, password }));
+        if (data?.payload?.roomId) {
+            navigate(`/room/${data?.payload.roomId}`);
+        }
     };
 
 
@@ -57,7 +57,7 @@ export const Home = () => {
 
             <div className={styles.buttonsSection}>
                 <Button text="Create Room" onClick={handleCreateRoom} />
-                <Button text="Join Room" onClick={() => handleJoinRoom('69e3ae9c9d9dd8ff96a99b71', '69d3e1aa55b4bc1d1f9dacaa', 'secret')} />
+                <Button text="Join Room" onClick={() => handleJoinRoom('69e3ae9c9d9dd8ff96a99b71', userId, 'secret')} />
             </div>
         </div>
     )

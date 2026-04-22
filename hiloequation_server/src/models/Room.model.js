@@ -7,8 +7,8 @@ const COLLECTION_NAME = 'Room';
 const RoomSchema = new Schema({
     status: {
         type: String,
-        enum: ['WAITING', 'PLAYING', 'FINISHED'],
-        default: 'WAITING',
+        enum: ['active', 'inactive'],
+        default: 'active',
     },
     maxPlayers: {
         type: Number,
@@ -23,10 +23,10 @@ const RoomSchema = new Schema({
         ref: 'Player',
         required: true,
     },
-    players: [{
+    players: {
         type: Types.ObjectId,
         ref: 'Player',
-    }],
+    },
 }, {
     timestamps: true,
     collection: COLLECTION_NAME,

@@ -29,7 +29,7 @@ app.use(cookieParser());
 app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerSpec));
 
 // init db
-require('./init.db');
+require('./dbs/init.db');
 // const { checkOverLoad } = require('./helpers/check.connect');
 // checkOverLoad();
 

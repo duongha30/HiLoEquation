@@ -10,7 +10,7 @@ const router = express.Router();
 // //check permission
 // router.use(checkApiKeyPermission('0000'));
 
-router.use('/v1/api', roomRouter);
 router.use('/v1/api', accessRouter);
+router.use('/v1/api', roomRouter);
 
 module.exports = router;

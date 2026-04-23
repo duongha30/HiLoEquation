@@ -30,6 +30,7 @@ app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerSpec));
 
 // init db
 require('./dbs/init.db');
+require('./dbs/init.redis');
 // const { checkOverLoad } = require('./helpers/check.connect');
 // checkOverLoad();
 

@@ -24,7 +24,9 @@ class RoomController {
     accessRoom = async (req, res) => {
         new OK({
             message: "Access room successfully",
-            metadata: await RoomService.accessRoom({ ...req.body })
+            metadata: await RoomService.accessRoom({
+                ...req.body
+            })
         }).send(res);
     }
 }

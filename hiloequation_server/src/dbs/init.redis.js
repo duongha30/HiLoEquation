@@ -1,11 +1,9 @@
 const { createClient } = require('redis');
 const client = createClient({
-    url: `${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`
+    url: `redis://${process.env.REDIS_HOST || '127.0.0.1'}:${process.env.REDIS_PORT || 6379}`
 });
 
-client.ping((error, res) => {
-    console.log('res', res);
-});
+client.connect().catch(err => console.error('Redis connect error:', err));
 
 client.on('connect', () => {
     console.log('Redis client connected with URL');

@@ -5,6 +5,11 @@ const DOCUMENT_NAME = 'Room';
 const COLLECTION_NAME = 'Room';
 
 const RoomSchema = new Schema({
+    roomCode: {
+        type: String,
+        unique: true,
+        required: true,
+    },
     status: {
         type: String,
         enum: ['active', 'inactive'],

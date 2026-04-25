@@ -43,8 +43,8 @@ class RedisPubSubService {
     }
 
     // redis v4
-    async publish(roomId, message) {
-        const channel = `room:${roomId}`;
+    async publish(roomCode, message) {
+        const channel = `room:${roomCode}`;
         const players = await this.getPlayersInChannel(channel);
         const announcement = { message: message.message, playerId: message.playerId, players };
         const payload = JSON.stringify(announcement);
@@ -53,8 +53,8 @@ class RedisPubSubService {
         return announcement;
     }
 
-    async subscribe(roomId, callback) {
-        const channel = `room:${roomId}`;
+    async subscribe(roomCode, callback) {
+        const channel = `room:${roomCode}`;
         await this.subscriber.subscribe(channel, async (message, receivedChannel) => {
             try {
                 const parsedMessage = JSON.parse(message);
@@ -68,9 +68,9 @@ class RedisPubSubService {
         console.log(`Subscribed to channel: ${channel}`);
     }
 
-    async unsubscribe(roomId, playerId) {
+    async unsubscribe(roomCode, playerId) {
         try {
-            const channel = `room:${roomId}`;
+            const channel = `room:${roomCode}`;
             await this.removePlayerFromChannel(channel, playerId);
             await this.subscriber.unsubscribe(channel);
             console.log(`Unsubscribed from channel: ${channel}`);
@@ -79,8 +79,8 @@ class RedisPubSubService {
         }
     }
 
-    async unsubscribeAll(roomId, playerId) {
-        const channel = `room:${roomId}`;
+    async unsubscribeAll(roomCode, playerId) {
+        const channel = `room:${roomCode}`;
         await this.dataClient.srem(channel, playerId);
         await this.subscriber.unsubscribe();
     }

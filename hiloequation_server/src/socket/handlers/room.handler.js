@@ -16,42 +16,42 @@ const { StatusCodes } = require('../../utils/httpStatusCode');
 const RoomService = require('../../services/room.service');
 
 module.exports = (io, socket) => {
-    socket.on(ON_CREATE_ROOM, async ({ roomId, playerId }) => {
+    socket.on(ON_CREATE_ROOM, async ({ roomCode, playerId }) => {
         try {
             await RoomService.accessRoomSocket({
-                roomId,
+                roomCode,
                 onRoomEvent: (data) => {
-                    io.to(roomId).emit(EMIT_PLAYER_JOIN, { status: SUCCESS, data });
+                    io.to(roomCode).emit(EMIT_PLAYER_JOIN, { status: SUCCESS, data });
                 }
             });
-            socket.join(roomId);
-            io.to(roomId).emit(EMIT_PLAYER_JOIN, { status: SUCCESS });
+            socket.join(roomCode);
+            io.to(roomCode).emit(EMIT_PLAYER_JOIN, { status: SUCCESS });
         } catch (error) {
-            io.to(roomId).emit(SOCKET_ERROR, { status: ERROR, message: error });
+            io.to(roomCode).emit(SOCKET_ERROR, { status: ERROR, message: error });
         }
     });
 
-    socket.on(ON_JOIN_ROOM, async ({ roomId, playerId, password }) => {
+    socket.on(ON_JOIN_ROOM, async ({ roomCode, playerId, password }) => {
         try {
             const players = await RoomService.accessRoomSocket({
-                roomId,
+                roomCode,
                 onRoomEvent: (data) => {
-                    io.to(roomId).emit(EMIT_PLAYER_JOIN, { status: SUCCESS, data });
+                    io.to(roomCode).emit(EMIT_PLAYER_JOIN, { status: SUCCESS, data });
                 }
             });
-            socket.join(roomId);
-            io.to(roomId).emit(EMIT_PLAYER_JOIN, { status: SUCCESS, players });
+            socket.join(roomCode);
+            io.to(roomCode).emit(EMIT_PLAYER_JOIN, { status: SUCCESS, players });
         } catch (error) {
-            io.to(roomId).emit(SOCKET_ERROR, { status: ERROR, message: error });
+            io.to(roomCode).emit(SOCKET_ERROR, { status: ERROR, message: error });
         }
     });
 
-    socket.on(ON_LEAVE_ROOM, ({ roomId, playerId }) => {
-        socket.leave(roomId);
-        const roomState = Game.clearPlayer(roomId, playerId);
+    socket.on(ON_LEAVE_ROOM, ({ roomCode, playerId }) => {
+        socket.leave(roomCode);
+        const roomState = Game.clearPlayer(roomCode, playerId);
         emitHandler({
             io,
-            roomId,
+            roomCode,
             eventName: EMIT_PLAYER_LEAVE,
             result: roomState,
             buildSuccessPayload: (value) => ({ roomState: value, playerId, status: SUCCESS }),

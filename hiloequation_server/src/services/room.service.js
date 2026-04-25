@@ -79,6 +79,14 @@ class RoomService {
 
         return players;
     }
+
+    static async leaveRoomSocket({ roomCode, playerId }) {
+        if (!roomCode || !playerId) {
+            throw new BadRequestError({ message: 'Missing required fields' });
+        }
+
+        await redisPubSubService.unsubscribe(roomCode, playerId);
+    }
 }
 
 module.exports = RoomService;

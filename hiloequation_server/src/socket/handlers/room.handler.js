@@ -48,9 +48,9 @@ module.exports = (io, socket) => {
         }
     });
 
-    socket.on(ON_LEAVE_ROOM, ({ roomCode, playerId }) => {
+    socket.on(ON_LEAVE_ROOM, async ({ roomCode, playerId }) => {
         socket.leave(roomCode);
-        unsubscribe(roomCode, playerId);
+        await RoomService.leaveRoomSocket({ roomCode, playerId });
         const roomState = Game.clearPlayer(roomCode, playerId);
         emitHandler({
             io,

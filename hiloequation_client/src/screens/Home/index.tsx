@@ -79,6 +79,7 @@ export const Home = () => {
             <div className={styles.buttonsSection}>
                 <Button text="Create Room" onClick={() => setShowCreateModal(true)} />
                 <Button text="Join Room" onClick={() => setShowJoinModal(true)} />
+                <Button text="test Join Room" onClick={() => navigate(`/room/testId`)} />
             </div>
 
             {showJoinModal && (

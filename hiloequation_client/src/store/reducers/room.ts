@@ -25,13 +25,13 @@ const roomSlice = createSlice({
         leaveRoom: state => {
             state.players = [];
         },
-        addPlayerToRoom: (state, action) => {
+        updatePlayersInRoom: (state, action) => {
             if (!state.players) {
                 state.players = [];
             }
-            const playerId = action?.payload?.playerId;
-            if (playerId && state.players.indexOf(playerId) === -1) {
-                state.players.push(playerId);
+            const players = action?.payload?.players;
+            if (players.length > 0) {
+                state.players = players;
             }
         },
         removePlayerFromRoom: (state, action) => {
@@ -53,7 +53,7 @@ const roomSlice = createSlice({
     },
 });
 
-export const { leaveRoom, addPlayerToRoom, removePlayerFromRoom } = roomSlice.actions;
+export const { leaveRoom, updatePlayersInRoom, removePlayerFromRoom } = roomSlice.actions;
 export const {
     selectById: selectRoomById,
 } = roomAdapter.getSelectors<RootState>(state => state.roomReducer);

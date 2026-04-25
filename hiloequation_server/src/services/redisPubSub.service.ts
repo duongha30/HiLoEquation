@@ -1,10 +1,10 @@
 import { createClient } from 'redis';
 import { BadRequestError } from '../core/error.response';
+import type { IRedisPubSubService, MessageCallback } from '../interfaces/IRedisPubSubService';
 
 type RedisClient = ReturnType<typeof createClient>;
-type MessageCallback = (channel: string, message: unknown) => void;
 
-class RedisPubSubService {
+class RedisPubSubService implements IRedisPubSubService {
     private publisher: RedisClient;
     private subscriber: RedisClient;
     private dataClient: RedisClient;

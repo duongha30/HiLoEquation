@@ -4,10 +4,11 @@
   "description": "",
   "license": "ISC",
   "author": "",
-  "main": "server.js",
+  "main": "server.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node --watch server.js"
+    "start": "tsx watch server.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "cookie-parser": "^1.4.7",
@@ -21,8 +22,16 @@
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/compression": "^1.8.1",
+    "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/lodash": "^4.17.24",
+    "@types/morgan": "^1.9.10",
     "@types/node": "^25.6.0",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.8",
     "bcrypt": "^6.0.0",
     "compress": "^0.99.0",
     "compression": "^1.8.1",

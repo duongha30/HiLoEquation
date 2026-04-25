@@ -28,10 +28,10 @@ const RoomSchema = new Schema({
         ref: 'Player',
         required: true,
     },
-    players: {
+    players: [{
         type: Types.ObjectId,
         ref: 'Player',
-    },
+    }],
 }, {
     timestamps: true,
     collection: COLLECTION_NAME,

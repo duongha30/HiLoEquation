@@ -20,6 +20,7 @@ module.exports = (io, socket) => {
         try {
             await RoomService.accessRoomSocket({
                 roomCode,
+                playerId,
                 onRoomEvent: (data) => {
                     io.to(roomCode).emit(EMIT_PLAYER_JOIN, { status: SUCCESS, data });
                 }
@@ -35,6 +36,7 @@ module.exports = (io, socket) => {
         try {
             const players = await RoomService.accessRoomSocket({
                 roomCode,
+                playerId,
                 onRoomEvent: (data) => {
                     io.to(roomCode).emit(EMIT_PLAYER_JOIN, { status: SUCCESS, data });
                 }
@@ -48,6 +50,7 @@ module.exports = (io, socket) => {
 
     socket.on(ON_LEAVE_ROOM, ({ roomCode, playerId }) => {
         socket.leave(roomCode);
+        unsubscribe(roomCode, playerId);
         const roomState = Game.clearPlayer(roomCode, playerId);
         emitHandler({
             io,

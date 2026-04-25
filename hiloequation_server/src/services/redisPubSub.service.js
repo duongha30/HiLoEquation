@@ -19,53 +19,45 @@ class RedisPubSubService {
     }
 
     async addPlayerToChannel(channel, playerId) {
-        try {
-            await this.dataClient.sadd(channel, playerId);
-        } catch (error) {
-            new BadRequestError({ message: 'Error in add channel in redis' });
-        }
+        await this.dataClient.SADD(channel, String(playerId));
     }
 
     async removePlayerFromChannel(channel, playerId) {
-        try {
-            await this.dataClient.srem(channel, playerId);
-        } catch (error) {
-            new BadRequestError({ message: 'Error in remove channel in redis' });
-        }
+        await this.dataClient.SREM(channel, String(playerId));
     }
 
     async getPlayersInChannel(channel) {
-        try {
-            return await this.dataClient.smembers(channel);
-        } catch (error) {
-            return new BadRequestError({ message: 'Error in get channel in redis' });
-        }
+        return await this.dataClient.SMEMBERS(channel);
     }
 
     // redis v4
     async publish(roomCode, message) {
-        const channel = `room:${roomCode}`;
-        const players = await this.getPlayersInChannel(channel);
-        const announcement = { message: message.message, playerId: message.playerId, players };
-        const payload = JSON.stringify(announcement);
-        const numReceivers = await this.publisher.publish(channel, payload);
-        console.log(`Message published to ${channel}. Receivers: ${numReceivers}`);
-        return announcement;
+        try {
+            const channel = `room:${roomCode}`;
+            const players = await this.getPlayersInChannel(channel);
+            const announcement = { message: message.message, playerId: message.playerId, players };
+            const payload = JSON.stringify(announcement);
+            const numReceivers = await this.publisher.publish(channel, payload);
+            console.log(`Message published to ${channel}. Receivers: ${numReceivers}`); // Remove log
+            return announcement;
+        } catch (error) {
+            console.error('Error publishing message:', error);
+            throw new BadRequestError({ message: 'Error in publish channel in redis' });
+        }
     }
 
     async subscribe(roomCode, callback) {
         const channel = `room:${roomCode}`;
         await this.subscriber.subscribe(channel, async (message, receivedChannel) => {
             try {
+                console.log(`Subscribing to channel: ${channel}`);  // Remove log
                 const parsedMessage = JSON.parse(message);
-                await this.addPlayerToChannel(receivedChannel, parsedMessage.playerId);
                 callback(receivedChannel, parsedMessage);
             } catch (err) {
                 console.error('Error parsing message:', err);
                 callback(channel, message);
             }
         });
-        console.log(`Subscribed to channel: ${channel}`);
     }
 
     async unsubscribe(roomCode, playerId) {
@@ -73,7 +65,7 @@ class RedisPubSubService {
             const channel = `room:${roomCode}`;
             await this.removePlayerFromChannel(channel, playerId);
             await this.subscriber.unsubscribe(channel);
-            console.log(`Unsubscribed from channel: ${channel}`);
+            console.log(`Unsubscribed from channel: ${channel}`);   // Remove log
         } catch (error) {
             console.error('Error in unsubscribe channel:', error);
         }

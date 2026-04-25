@@ -1,42 +1,55 @@
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import styles from './Home.module.css'
-import { Button } from "@/components";
-import { createRoom } from "@/store";
-import { useAppDispatch } from "@/store/hooks";
-import { useEffect } from "react";
-import { connectSocketThunk } from "@/store/actions/socket";
-import { disconnectSocket } from '@/store/socket/socket';
-import { selectIsSocketConnected, disconnectSocketReducer } from '@/store';
-import { useSelector } from 'react-redux';
+import { Button, CreateJoinModal } from "@/components";
+import { createRoom, joinRoom, selectUserId } from "@/store";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { useConnectSocket } from "@/hooks";
+import type { RoomDB } from '@/store/types/room';
 
 const DOT_COUNT = 28;
 
 export const Home = () => {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
-    const isConnected = useSelector(selectIsSocketConnected);
+    const userId = useAppSelector(selectUserId);
 
-    const handleCreateRoom = () => {
-        dispatch(createRoom())
-            .then(({ payload }: any) => {
-                if (payload) {
-                    navigate(`/room/${payload._id}`);
-                }
-            });
+    useConnectSocket();
+
+    const [showJoinModal, setShowJoinModal] = useState(false);
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [errorText, setErrorText] = useState('');
+
+    const handleJoinRoom = async (password: string, roomCode: string) => {
+        const data = await dispatch(joinRoom({ roomCode, playerId: userId, password: password }));
+        console.log('data', data)
+        if ((data?.payload as RoomDB)?.roomCode) {
+            navigate(`/room/${roomCode}`);
+            setShowJoinModal(false);
+            return;
+        }
+        setErrorText("something went wrong, please try again");
     };
-    useEffect(() => {
-        // TODO: should connect to socket after login
-        dispatch(connectSocketThunk()).then((data) => {
-            console.log('connectSocketThunk home: ', data)
-        });
-        return () => {
-            console.log('isConnected', isConnected)
-            if (isConnected) {
-                disconnectSocket();
-                dispatch(disconnectSocketReducer());
-            }
-        };
-    }, []);
+    const handleCreateRoom = async (password: string = '') => {
+        const data = await dispatch(createRoom({
+            password,
+            hostId: userId,
+            maxPlayers: 4
+        }));
+        console.log('data', data)
+        if ((data?.payload as RoomDB)?.roomCode) {
+            navigate(`/room/${(data.payload as RoomDB).roomCode}`);
+            setShowCreateModal(false);
+            return;
+        }
+        setErrorText("something went wrong, please try again");
+    };
+    const handleCloseModal = () => {
+        setShowJoinModal(false);
+        setShowCreateModal(false);
+        setErrorText('');
+    }
+
     return (
         <div className={styles.container}>
             <div className={styles.banner}>
@@ -64,8 +77,25 @@ export const Home = () => {
             </div>
 
             <div className={styles.buttonsSection}>
-                <Button text="Create Room" onClick={handleCreateRoom} />
+                <Button text="Create Room" onClick={() => setShowCreateModal(true)} />
+                <Button text="Join Room" onClick={() => setShowJoinModal(true)} />
             </div>
+
+            {showJoinModal && (
+                <CreateJoinModal
+                    onClose={handleCloseModal}
+                    onSubmit={handleJoinRoom}
+                    showCodeInput={true}
+                    errorText={errorText}
+                />
+            )}
+            {showCreateModal && (
+                <CreateJoinModal
+                    onClose={handleCloseModal}
+                    onSubmit={handleCreateRoom}
+                    errorText={errorText}
+                />
+            )}
         </div>
     )
 }

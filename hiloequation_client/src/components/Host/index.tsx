@@ -1,21 +1,23 @@
-import styles from './Player.module.css';
+import styles from './Host.module.css';
 import { useDroppable } from '@dnd-kit/react';
 import { Card } from '@/components';
 import type { CardData } from '@/types/card';
 
-type PlayerProps = {
+type HostProps = {
     id: string;
     cards: CardData[];
     onCardMount?: (id: string, el: HTMLElement | null) => void;
     cardTranslates?: Record<string, number>;
 };
 
-export const Player = ({ id, cards, onCardMount, cardTranslates }: PlayerProps) => {
+export const Host = ({ id, cards, onCardMount, cardTranslates }: HostProps) => {
     const { ref } = useDroppable({ id });
 
     return (
-        <div ref={ref} className={styles.container} >
-            name Player
+        <div ref={ref} className={styles.container}>
+            {cards.map((card) => (
+                <Card key={card.id} card={card} droppable onMount={onCardMount} translateX={cardTranslates?.[card.id]} />
+            ))}
         </div>
     );
 };

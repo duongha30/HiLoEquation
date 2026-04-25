@@ -4,7 +4,11 @@ const { Server } = require('socket.io');
 
 const initialSocket = (server) => {
     const io = new Server(server, {
-        cors: { origin: '*' },
+        cors: {
+            origin: 'http://localhost:3000',
+            methods: ['GET', 'POST'],
+            credentials: true,
+        },
     });
     require('./index')(io);
     return io;

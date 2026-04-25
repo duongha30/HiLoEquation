@@ -2,14 +2,15 @@ import { useEffect, useRef, useState } from 'react';
 import { DragDropProvider } from '@dnd-kit/react';
 import type { DragEndEvent, DragStartEvent, DragMoveEvent } from '@dnd-kit/react';
 import styles from './Room.module.css';
-import { Deck, Player } from '@/components';
+import { Deck, Host, Player } from '@/components';
 import { createDeck, shuffleDeck, deliverRound1, deliverRound2 } from '@/utils/deck';
 import { DEFAULT_OPERATION_CARDS } from '@/types/card';
 import type { CardData } from '@/types/card';
+import { useRoomSubscription } from '@/hooks';
 
 export const Room = () => {
   const [deckCards, setDeckCards] = useState<CardData[]>(() => shuffleDeck(createDeck()));
-  const [playerCards, setPlayerCards] = useState<CardData[]>(DEFAULT_OPERATION_CARDS);
+  const [playerCards, setHostCards] = useState<CardData[]>(DEFAULT_OPERATION_CARDS);
   const [deliveryCount, setDeliveryCount] = useState(0);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [cardTranslates, setCardTranslates] = useState<Record<string, number>>({});
@@ -19,6 +20,7 @@ export const Room = () => {
   const snapRects = useRef<Map<string, DOMRect>>(new Map()); // Snapshotted rects of all player cards at the moment drag starts
   const insertAtRef = useRef<number>(0); // Tracks where the dragged card would land if dropped right now
   const playerCardsRef = useRef(playerCards);
+  useRoomSubscription();
   useEffect(() => { playerCardsRef.current = playerCards; }, [playerCards]);
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -110,7 +112,7 @@ export const Room = () => {
     if (!sourceId) return;
 
     const insertAt = insertAtRef.current;
-    setPlayerCards((prev) => {
+    setHostCards((prev) => {
       const origIdx = prev.findIndex((c) => c.id === sourceId);
       if (origIdx === -1 || origIdx === insertAt) return prev;
       const next = [...prev];
@@ -132,7 +134,7 @@ export const Room = () => {
       : deliverRound1(deckCards);
 
     setDeckCards(newDeck);
-    setPlayerCards((prev) => [...prev, ...delivered]);
+    setHostCards((prev) => [...prev, ...delivered]);
     setDeliveryCount(round);
   };
 
@@ -143,26 +145,28 @@ export const Room = () => {
       onDragEnd={handleDragEnd}
     >
       <div className={styles.container}>
-        <button
-          onClick={handleCardDelivery}
-          disabled={
-            !!activeId ||
-            deckCards.length === 0 ||
-            playerCards.filter((c) => c.type === 'number').length >= 4
-          }
-          className={styles.cardDeliveryBtn}
-        >
-          Card Delivery {deliveryCount === 0 ? '' : `(Round ${deliveryCount + 1})`}
-        </button>
-        <Deck
-          cards={deckCards}
-          onShuffle={() => {
-            setDeckCards(shuffleDeck(createDeck()));
-            setDeliveryCount(0);
-          }}
-        />
-        <Player
-          id="player"
+        <div className={styles.deckSection}>
+          <button
+            onClick={handleCardDelivery}
+            disabled={
+              !!activeId ||
+              deckCards.length === 0 ||
+              playerCards.filter((c) => c.type === 'number').length >= 4
+            }
+            className={styles.cardDeliveryBtn}
+          >
+            Card Delivery {deliveryCount === 0 ? '' : `(Round ${deliveryCount + 1})`}
+          </button>
+          <Deck
+            cards={deckCards}
+            onShuffle={() => {
+              setDeckCards(shuffleDeck(createDeck()));
+              setDeliveryCount(0);
+            }}
+          />
+        </div>
+        <Host
+          id="host-player"
           cards={playerCards}
           onCardMount={(id, el) => {
             if (el) cardRefs.current.set(id, el);
@@ -170,6 +174,7 @@ export const Room = () => {
           }}
           cardTranslates={cardTranslates}
         />
+        <Player id="player-1" cards={[]} />
       </div>
     </DragDropProvider>
   );

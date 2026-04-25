@@ -1,4 +1,4 @@
-import type { CardData } from "./types";
+import type { CardData } from './types.ts';
 
 export const DEFAULT_OPERATION_CARDS: CardData[] = [
     { id: 'op-add', type: 'operation', operation: '+' },

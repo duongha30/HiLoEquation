@@ -6,14 +6,9 @@ let socket: Socket | null = null;
 const socketURL = config.SOCKET_URL;
 
 export const connectSocket = async (): Promise<Socket> => {
-    // const token = await localforage.getItem<string>('authToken');
-    // if (!token) {
-    //     throw new Error('No auth token found');
-    // }
-
     if (!socket) {
         socket = io(socketURL, {
-            // auth: { token }, // TODO: add auth token retrieval from cookie
+            withCredentials: true, // Enable cookies to be sent with socket requests
         });
 
         await new Promise((resolve, reject) => {
@@ -21,7 +16,10 @@ export const connectSocket = async (): Promise<Socket> => {
                 console.log('Socket connected:', socket?.id);
                 resolve(true);
             });
-            socket?.on('connect_error', (err) => reject(err));
+            socket?.on('connect_error', (err) => {
+                console.error('Socket connection error:', err);
+                reject(err);
+            });
         });
 
         socket.on('disconnect', (reason) => {

@@ -63,7 +63,6 @@ class AccessService {
 
     static async signUp(req) {
         const { name, email, password } = req;
-        console.log('email', email)
         const player = await playerModel.findOne({ email }).lean();
         if (!!player) {
             throw new BadRequestError({ message: 'player already existing!' });

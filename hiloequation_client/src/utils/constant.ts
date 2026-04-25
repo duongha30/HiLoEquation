@@ -4,3 +4,5 @@ export const url = {
     home: '/',
     room: '/room/:roomId',
 };
+
+export const SOCKET_ONCE_TIMEOUT = 5000;

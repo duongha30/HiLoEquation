@@ -1,11 +1,11 @@
 'use strict';
-import { addSymbolIfNotExists, createDeck, drawOnlyNumber, drawCard, shuffleDeck } from './deck';
+import { addSymbolIfNotExists, createDeck, drawOnlyNumber, drawCard, shuffleDeck } from './deck.ts';
 import type {
     CardData,
     GameState,
     HandsType,
-} from './types';
-import { INIT_CASH, INIT_SCORE, INIT_BETTING, DEFAULT_OPERATION_CARDS } from './constant';
+} from './types.ts';
+import { INIT_CASH, INIT_SCORE, INIT_BETTING, DEFAULT_OPERATION_CARDS } from './constant.ts';
 
 class GameCore {
     gameState = new Map<string, GameState>();
@@ -322,4 +322,4 @@ class GameCore {
 }
 
 
-export const Game = new GameCore();
+module.exports = GameCore;

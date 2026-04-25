@@ -10,7 +10,7 @@ const {
     EMIT_GAME_RESULT,
     EMIT_CARD_DEAL,
 } = require('../events');
-const { Game } = require('../../game/game.core');
+const { Game } = require('../../game');
 const { emitHandler } = require('../../utils/socketUtils');
 
 module.exports = (io, socket) => {

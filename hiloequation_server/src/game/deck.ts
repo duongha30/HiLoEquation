@@ -1,6 +1,6 @@
 "use strict"
 
-import type { CardData, Suit } from './types';
+import type { CardData, Suit } from './types.ts';
 
 
 const SUITS: Suit[] = ['gold', 'silver', 'bronze', 'black'];

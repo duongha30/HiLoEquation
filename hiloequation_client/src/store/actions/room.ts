@@ -46,18 +46,25 @@ export const createRoom = createAppAsyncThunk(
                     playerId: metadata.hostId,
                 });
 
-                socket.once(ON_PLAYER_JOIN, (response: SocketPlayerJoin) => {
+                const onJoin = (response: SocketPlayerJoin) => {
+                    clearTimeout(timeoutId);
+                    socket.off(SOCKET_ERROR, onError);
                     console.log('Room created successfully:', response.status);
                     resolve(metadata);
-                });
+                };
 
-                socket.once(SOCKET_ERROR, (error: any) => {
+                const onError = (error: any) => {
+                    clearTimeout(timeoutId);
+                    socket.off(ON_PLAYER_JOIN, onJoin);
                     reject(new Error(error.message || 'Failed to create room'));
-                });
+                };
 
-                setTimeout(() => {
-                    socket.off(ON_PLAYER_JOIN);
-                    socket.off(SOCKET_ERROR);
+                socket.once(ON_PLAYER_JOIN, onJoin);
+                socket.once(SOCKET_ERROR, onError);
+
+                const timeoutId = setTimeout(() => {
+                    socket.off(ON_PLAYER_JOIN, onJoin);
+                    socket.off(SOCKET_ERROR, onError);
                     reject(new Error('Room creation timeout'));
                 }, SOCKET_ONCE_TIMEOUT);
             });
@@ -95,18 +102,27 @@ export const joinRoom = createAppAsyncThunk(
                     playerId,
                     password,
                 });
-                socket.once(ON_PLAYER_JOIN, (response: SocketPlayerJoin) => {
-                    console.log('Room created successfully:', response.status);
+
+                const onJoin = (response: SocketPlayerJoin) => {
+                    clearTimeout(timeoutId);
+                    socket.off(SOCKET_ERROR, onError);
+                    console.log('Room joined successfully:', response.status);
                     const res = { ...metadata, playerId: response.playerId, players: response.players };
                     resolve(res);
-                });
-                socket.once(SOCKET_ERROR, (error: any) => {
-                    reject(new Error(error.message || 'Failed to create room'));
-                });
+                };
 
-                setTimeout(() => {
-                    socket.off(ON_PLAYER_JOIN);
-                    socket.off(SOCKET_ERROR);
+                const onError = (error: any) => {
+                    clearTimeout(timeoutId);
+                    socket.off(ON_PLAYER_JOIN, onJoin);
+                    reject(new Error(error.message || 'Failed to join room'));
+                };
+
+                socket.once(ON_PLAYER_JOIN, onJoin);
+                socket.once(SOCKET_ERROR, onError);
+
+                const timeoutId = setTimeout(() => {
+                    socket.off(ON_PLAYER_JOIN, onJoin);
+                    socket.off(SOCKET_ERROR, onError);
                     reject(new Error('Join room timeout'));
                 }, 5000);
             });

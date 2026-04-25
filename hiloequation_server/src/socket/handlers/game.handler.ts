@@ -8,18 +8,18 @@ import { Game } from '../../game';
 import { emitHandler } from '../../utils/socketUtils';
 
 export default (io: Server, socket: Socket) => {
-    socket.on(ON_START_GAME, ({ roomId, playerIds }: { roomId: string; playerIds: string[] }) => {
-        const roomState = Game.start(roomId, playerIds);
+    socket.on(ON_START_GAME, async ({ roomId, playerIds }: { roomId: string; playerIds: string[] }) => {
+        const roomState = await Game.start(roomId, playerIds);
         emitHandler({ io, roomId, eventName: EMIT_START, result: roomState, buildSuccessPayload: (value) => ({ roomState: value, status: SUCCESS }) });
     });
 
-    socket.on(ON_DEAL_CARD, ({ roomId, playerId, times = 1, isFirstDraw = false }: { roomId: string; playerId: string; times?: number; isFirstDraw?: boolean }) => {
+    socket.on(ON_DEAL_CARD, async ({ roomId, playerId, times = 1, isFirstDraw = false }: { roomId: string; playerId: string; times?: number; isFirstDraw?: boolean }) => {
         if (!playerId || socket.data.playerId !== playerId) {
             socket.emit(EMIT_CARD_DEAL, { status: ERROR });
             return;
         }
 
-        const dealResult = Game.deal(roomId, playerId, times, isFirstDraw);
+        const dealResult = await Game.deal(roomId, playerId, times, isFirstDraw);
         if (!dealResult) { socket.emit(EMIT_CARD_DEAL, { status: ERROR }); return; }
 
         const { playerState, round } = dealResult;
@@ -37,13 +37,13 @@ export default (io: Server, socket: Socket) => {
         }
     });
 
-    socket.on(ON_FINISH_GAME, ({ roomId, playerId, result }: { roomId: string; playerId: string; result: unknown }) => {
+    socket.on(ON_FINISH_GAME, async ({ roomId, playerId, result }: { roomId: string; playerId: string; result: unknown }) => {
         if (!playerId || socket.data.playerId !== playerId) { socket.emit(EMIT_GAME_RESULT, { status: ERROR }); return; }
 
-        const submissionState = Game.setSubmission(roomId, playerId, result as any);
+        const submissionState = await Game.setSubmission(roomId, playerId, result as any);
         if (!submissionState) { socket.emit(EMIT_GAME_RESULT, { status: ERROR }); return; }
 
-        const finalResult = Game.finalizeRound(roomId);
+        const finalResult = await Game.finalizeRound(roomId);
         emitHandler({ io, roomId, eventName: EMIT_GAME_RESULT, result: finalResult, buildSuccessPayload: (value) => ({ result: value, status: SUCCESS }) });
     });
 };

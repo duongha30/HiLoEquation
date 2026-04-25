@@ -6,9 +6,25 @@ import type {
     HandsType,
 } from './types.ts';
 import { INIT_CASH, INIT_SCORE, INIT_BETTING, DEFAULT_OPERATION_CARDS } from './constant.ts';
+import redisClient from '../dbs/init.redis';
+import type { IGameCore } from '../interfaces/IGameCore';
 
-class GameCore {
-    gameState = new Map<string, GameState>();
+const gameKey = (roomId: string) => `game:state:${roomId}`;
+
+class GameCore implements IGameCore {
+    private async getState(roomId: string): Promise<GameState | null> {
+        const raw = await redisClient.get(gameKey(roomId));
+        if (!raw) return null;
+        return JSON.parse(raw) as GameState;
+    }
+
+    private async setState(roomId: string, state: GameState): Promise<void> {
+        await redisClient.set(gameKey(roomId), JSON.stringify(state));
+    }
+
+    private async deleteState(roomId: string): Promise<void> {
+        await redisClient.del(gameKey(roomId));
+    }
 
     private cloneCards(cards: CardData[] | null): CardData[] | null {
         if (!cards) {
@@ -40,32 +56,22 @@ class GameCore {
         };
     }
 
-    private getRequiredRoom(roomId: string): GameState | null {
-        return this.gameState.get(roomId) ?? null;
-    }
-
     private getRequiredPlayer(roomState: GameState, playerId: string): HandsType[string] | null {
         return roomState.hands[playerId] ?? null;
     }
 
-    getRoom(roomId: string) {
-        const roomState = this.gameState.get(roomId);
-        if (!roomState) {
-            return;
-        }
+    async getRoom(roomId: string): Promise<GameState | undefined> {
+        const roomState = await this.getState(roomId);
+        if (!roomState) return undefined;
         return this.cloneRoom(roomState);
     }
 
-    getPlayer(roomId: string, playerId: string) {
-        const roomState = this.gameState.get(roomId);
-        if (!roomState) {
-            return;
-        }
+    async getPlayer(roomId: string, playerId: string) {
+        const roomState = await this.getState(roomId);
+        if (!roomState) return undefined;
 
         const playerState = roomState.hands[playerId];
-        if (!playerState) {
-            return;
-        }
+        if (!playerState) return undefined;
 
         return {
             cash: playerState.cash,
@@ -75,65 +81,52 @@ class GameCore {
         };
     }
 
-    destroy(roomId: string) {
-        this.gameState.delete(roomId);
+    async destroy(roomId: string): Promise<void> {
+        await this.deleteState(roomId);
     }
 
-    clearPlayer(roomId: string, playerId: string) {
-        const roomState = this.gameState.get(roomId);
-        if (!roomState) {
-            return;
-        }
-
-        if (!roomState.hands[playerId]) {
-            return;
-        }
+    async clearPlayer(roomId: string, playerId: string) {
+        const roomState = await this.getState(roomId);
+        if (!roomState) return undefined;
+        if (!roomState.hands[playerId]) return undefined;
 
         delete roomState.hands[playerId];
-        this.gameState.set(roomId, roomState);
+        await this.setState(roomId, roomState);
         return this.getRoom(roomId);
     }
 
-    start(roomId: string, players: string[]) {
-        const roomState = this.getRequiredRoom(roomId);
-        if (!roomState) {
-            return;
-        }
+    async start(roomId: string, players: string[]) {
+        if (players.length === 0) return undefined;
 
-        if (players.length === 0) {
-            return;
-        }
+        // Preserve existing player cash/score between rounds if state exists
+        const existingState = await this.getState(roomId);
+        const existingHands = existingState?.hands ?? {};
 
         const initDeck = shuffleDeck(createDeck());
         const hands: HandsType = {};
         for (const player of players) {
-            hands[player] = roomState.hands[player] ?? {
+            hands[player] = existingHands[player] ?? {
                 cash: INIT_CASH,
                 score: INIT_SCORE,
                 cards: null,
                 bet: INIT_BETTING,
-            }
+            };
         }
-        this.gameState.set(roomId, { deck: initDeck, round: 0, hands, totalBetting: 0 });
-        return this.getRoom(roomId);
+
+        const newState: GameState = { deck: initDeck, round: 0, hands, totalBetting: 0 };
+        await this.setState(roomId, newState);
+        return this.cloneRoom(newState);
     }
 
-    deal(roomId: string, playerId: string, times: number, isFirstDraw = true) {
-        const roomState = this.getRequiredRoom(roomId);
-        if (!roomState) {
-            return;
-        }
+    async deal(roomId: string, playerId: string, times: number, isFirstDraw = true) {
+        const roomState = await this.getState(roomId);
+        if (!roomState) return undefined;
 
         const playerState = roomState.hands[playerId];
-        if (!playerState) {
-            return;
-        }
+        if (!playerState) return undefined;
 
         if (times <= 0) {
-            return {
-                playerState,
-                round: roomState.round,
-            };
+            return { playerState, round: roomState.round };
         }
 
         const { hands, deck: initialDeck } = roomState;
@@ -148,9 +141,7 @@ class GameCore {
                 ? drawOnlyNumber(currentDeck)
                 : drawCard(currentDeck);
 
-            if (result instanceof Error || !result) {
-                continue;
-            }
+            if (result instanceof Error || !result) continue;
 
             const { card, deck: remainingDeck } = result;
             currentDeck = remainingDeck;
@@ -181,14 +172,11 @@ class GameCore {
 
         const nextRoomState: GameState = {
             ...roomState,
-            hands: {
-                ...hands,
-                [playerId]: updatedPlayer,
-            },
+            hands: { ...hands, [playerId]: updatedPlayer },
             deck: currentDeck,
             round: roomState.round + 1,
         };
-        this.gameState.set(roomId, nextRoomState);
+        await this.setState(roomId, nextRoomState);
 
         return {
             playerState: nextRoomState.hands[playerId],
@@ -196,97 +184,60 @@ class GameCore {
         };
     }
 
-    bet(roomId: string, playerId: string, betting: number) {
-        const roomState = this.getRequiredRoom(roomId);
-        if (!roomState) {
-            return;
-        }
+    async bet(roomId: string, playerId: string, betting: number) {
+        const roomState = await this.getState(roomId);
+        if (!roomState) return undefined;
 
         const playerState = this.getRequiredPlayer(roomState, playerId);
-        if (!roomState || !playerState) {
-            return;
-        }
+        if (!playerState) return undefined;
 
-        if (betting <= 0 || betting > playerState.cash) {
-            return;
-        }
-
-        const updatedPlayer = {
-            ...playerState,
-            bet: playerState.bet + betting,
-            cash: playerState.cash - betting,
-        };
+        if (betting <= 0 || betting > playerState.cash) return undefined;
 
         const nextRoomState: GameState = {
             ...roomState,
             hands: {
                 ...roomState.hands,
-                [playerId]: updatedPlayer,
+                [playerId]: { ...playerState, bet: playerState.bet + betting, cash: playerState.cash - betting },
             },
             totalBetting: roomState.totalBetting + betting,
         };
-
-        this.gameState.set(roomId, nextRoomState);
+        await this.setState(roomId, nextRoomState);
         return this.getPlayer(roomId, playerId);
     }
 
-    fold(roomId: string, playerId: string) {
-        const roomState = this.getRequiredRoom(roomId);
-        if (!roomState) {
-            return;
-        }
+    async fold(roomId: string, playerId: string) {
+        const roomState = await this.getState(roomId);
+        if (!roomState) return undefined;
 
         const playerState = this.getRequiredPlayer(roomState, playerId);
-        if (!playerState) {
-            return;
-        }
+        if (!playerState) return undefined;
 
         const nextRoomState: GameState = {
             ...roomState,
-            hands: {
-                ...roomState.hands,
-                [playerId]: {
-                    ...playerState,
-                    cards: null,
-                },
-            },
+            hands: { ...roomState.hands, [playerId]: { ...playerState, cards: null } },
         };
-
-        this.gameState.set(roomId, nextRoomState);
+        await this.setState(roomId, nextRoomState);
         return this.getPlayer(roomId, playerId);
     }
 
-    setSubmission(roomId: string, playerId: string, result: number) {
-        const roomState = this.getRequiredRoom(roomId);
-        if (!roomState) {
-            return;
-        }
+    async setSubmission(roomId: string, playerId: string, result: number) {
+        const roomState = await this.getState(roomId);
+        if (!roomState) return undefined;
 
         const playerState = this.getRequiredPlayer(roomState, playerId);
-        if (!roomState || !playerState) {
-            return;
-        }
+        if (!playerState) return undefined;
 
         const nextRoomState: GameState = {
             ...roomState,
-            hands: {
-                ...roomState.hands,
-                [playerId]: {
-                    ...playerState,
-                    score: result,
-                },
-            },
+            hands: { ...roomState.hands, [playerId]: { ...playerState, score: result } },
         };
-
-        this.gameState.set(roomId, nextRoomState);
+        await this.setState(roomId, nextRoomState);
         return this.getPlayer(roomId, playerId);
     }
 
-    finalizeRound(roomId: string) {
-        const roomState = this.getRequiredRoom(roomId);
-        if (!roomState) {
-            return;
-        }
+    async finalizeRound(roomId: string) {
+        const roomState = await this.getState(roomId);
+        if (!roomState) return undefined;
 
         const highestScore = { id: '', score: 0 };
         for (const player in roomState.hands) {
@@ -310,13 +261,8 @@ class GameCore {
             };
         }
 
-        const nextRoomState: GameState = {
-            ...roomState,
-            hands: nextHands,
-            totalBetting: 0,
-        };
-
-        this.gameState.set(roomId, nextRoomState);
+        const nextRoomState: GameState = { ...roomState, hands: nextHands, totalBetting: 0 };
+        await this.setState(roomId, nextRoomState);
         return this.getRoom(roomId);
     }
 }

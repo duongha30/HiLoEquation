@@ -36,7 +36,7 @@ export default (io: Server, socket: Socket) => {
     socket.on(ON_LEAVE_ROOM, async ({ roomCode, playerId }: { roomCode: string; playerId: string }) => {
         socket.leave(roomCode);
         await RoomService.leaveRoomSocket({ roomCode, playerId });
-        const roomState = Game.clearPlayer(roomCode, playerId);
+        const roomState = await Game.clearPlayer(roomCode, playerId);
         emitHandler({
             io,
             roomId: roomCode,

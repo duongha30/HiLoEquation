@@ -1,20 +1,11 @@
 import { createAppAsyncThunk, type AppAsyncThunkActionCases } from '../hooks';
-import { retryRequest } from '../api/retryRequest';
 import { getSocket } from '../socket/socket';
 import { post } from '../api/post';
-import type { CreateRoomResponse } from '../types/room';
-import type { JoinRoomResponse } from '../../types/socketEventType';
-import { EMIT_JOIN_ROOM, ON_PLAYER_JOIN } from '../socket/events';
-import { addPlayerToRoom } from '../reducers/room';
+import type { CreateRoomResponse, JoinRoomResponse, FetchRoomsResponse, RoomDB } from '../types/room';
+import { EMIT_JOIN_ROOM, ON_PLAYER_JOIN, SOCKET_ERROR } from '../socket/events';
 import { get } from '../api/get';
-
-type FetchRoomsResponse = {
-    _id: string,
-    status: string,
-    maxPlayers: number,
-    hostId: string,
-    players: string[],
-};
+import { SOCKET_ONCE_TIMEOUT } from '@/utils/constant';
+import type { SocketPlayerJoin } from '../socket/types';
 
 export const fetchRoomById = createAppAsyncThunk(
     'room/fetchRoomById',
@@ -33,56 +24,89 @@ export const fetchRoomById = createAppAsyncThunk(
 
 export const createRoom = createAppAsyncThunk(
     'room/createRoom',
-    async () => {
+    async ({ password, hostId, maxPlayers }: { password: string, hostId: string, maxPlayers: number }, { rejectWithValue }) => {
         try {
-            //TODO: get hostId from auth state 
-            const { metadata }: CreateRoomResponse = await post('/room/create', {
-                password: "secret",
-                hostId: "69d3e1aa55b4bc1d1f9dacaa",
-                maxPlayers: 4
+            const socket = getSocket();
+            if (!socket) {
+                throw new Error('Socket not connected');
+            }
+            const { metadata } = await post<CreateRoomResponse>('/room/create', {
+                password,
+                hostId,
+                maxPlayers
             });
-            console.log('metadata', metadata)
-            // const socket = getSocket();
-            // console.log('socket', socket)
-            // if (metadata) {
-            //     //TODO: emit event with token
-            //     socket.emit(EMIT_CREATE_ROOM, {
-            //         roomId: metadata._id,
-            //     });
-            // }
-            return metadata;
+
+            if (!metadata?._id) {
+                throw new Error('Invalid room metadata');
+            }
+
+            return new Promise<RoomDB>((resolve, reject) => {
+                socket.emit(EMIT_JOIN_ROOM, {
+                    roomCode: metadata.roomCode,
+                    playerId: metadata.hostId,
+                });
+
+                socket.once(ON_PLAYER_JOIN, (response: SocketPlayerJoin) => {
+                    console.log('Room created successfully:', response.status);
+                    resolve(metadata);
+                });
+
+                socket.once(SOCKET_ERROR, (error: any) => {
+                    reject(new Error(error.message || 'Failed to create room'));
+                });
+
+                setTimeout(() => {
+                    socket.off(ON_PLAYER_JOIN);
+                    socket.off(SOCKET_ERROR);
+                    reject(new Error('Room creation timeout'));
+                }, SOCKET_ONCE_TIMEOUT);
+            });
         } catch (err) {
             if (err instanceof DOMException && err.name === 'AbortError') {
-                throw err; // let RTK handle the cancellation
+                throw err;
             }
-            console.log('createRoom error: ', err)
-            return null;
+            console.error('createRoom error:', err);
+            return rejectWithValue((err as Error).message);
         }
     },
 );
 
 export const joinRoom = createAppAsyncThunk(
     'room/joinRoom',
-    async ({ roomId, playerId, password }: { roomId: string, playerId: string, password: string }, thunkAPI): Promise<JoinRoomResponse | void> => {
+    async ({ roomCode, playerId, password }: { roomCode: string, playerId: string, password: string }, thunkAPI) => {
         try {
             const socket = getSocket();
-            await thunkAPI.dispatch(fetchRoomById(roomId));
-            console.log('join playerId', playerId)
-            return new Promise<JoinRoomResponse>((resolve, reject) => {
-                socket.once(ON_PLAYER_JOIN, (data: JoinRoomResponse) => {
-                    console.log('data', data)
-                    if (data.playerId) {
-                        thunkAPI.dispatch(addPlayerToRoom({ playerId: data.playerId }));
-                    }
-                    resolve(data);
-                });
+            if (!socket) {
+                throw new Error('Socket not connected');
+            }
+            const { metadata } = await post<JoinRoomResponse>('/room/join', {
+                roomCode,
+                playerId,
+                password
+            });
+
+            if (!metadata?._id) {
+                throw new Error('Invalid room metadata');
+            }
+
+            return new Promise<RoomDB & { playerId: string, players: string[] }>((resolve, reject) => {
                 socket.emit(EMIT_JOIN_ROOM, {
-                    roomId,
+                    roomCode,
                     playerId,
                     password,
                 });
+                socket.once(ON_PLAYER_JOIN, (response: SocketPlayerJoin) => {
+                    console.log('Room created successfully:', response.status);
+                    const res = { ...metadata, playerId: response.playerId, players: response.players };
+                    resolve(res);
+                });
+                socket.once(SOCKET_ERROR, (error: any) => {
+                    reject(new Error(error.message || 'Failed to create room'));
+                });
+
                 setTimeout(() => {
                     socket.off(ON_PLAYER_JOIN);
+                    socket.off(SOCKET_ERROR);
                     reject(new Error('Join room timeout'));
                 }, 5000);
             });
@@ -91,6 +115,7 @@ export const joinRoom = createAppAsyncThunk(
                 throw err;
             }
             console.log('joinRoom error: ', err)
+            return thunkAPI.rejectWithValue((err as Error).message);
         }
     },
 );
@@ -120,8 +145,17 @@ export const createRoomCases: AppAsyncThunkActionCases<
     'roomReducer',
     typeof createRoom
 > = {
-    fulfilled: (state) => {
+    fulfilled: (state, action) => {
         state.status = 'idle';
+        if (action.payload) {
+            const { _id, roomCode, status, hostId, maxPlayers } = action.payload;
+            state.id = _id;
+            state.roomCode = roomCode;
+            state.roomStatus = status || 'WAITING';
+            state.hostId = hostId;
+            state.maxPlayers = maxPlayers;
+            state.players = [hostId]; // Host is first player
+        }
     },
     rejected: (state) => {
         state.status = 'failed';
@@ -137,9 +171,13 @@ export const joinRoomCases: AppAsyncThunkActionCases<
 > = {
     fulfilled: (state, action) => {
         state.status = 'idle';
-        if (action.payload?.roomId) {
-            const { roomId } = action.payload;
-            state.id = roomId;
+        if (action.payload) {
+            const { _id, status, hostId, maxPlayers, players, playerId } = action.payload;
+            state.id = _id;
+            state.roomStatus = status || 'WAITING';
+            state.hostId = hostId;
+            state.maxPlayers = maxPlayers;
+            state.players = [...players, playerId];
         }
     },
     rejected: (state) => {

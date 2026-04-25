@@ -3,3 +3,4 @@ export { Deck } from './Deck';
 export { Host } from './Host';
 export { Player } from './Player';
 export { Button } from './Button';
+export { CreateJoinModal } from './CreateJoinModal';

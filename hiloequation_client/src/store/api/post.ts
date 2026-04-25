@@ -9,7 +9,7 @@ export const post = async <T = unknown>(
     url: string,
     data: RequestData = {},
     headers: RequestHeaders = {},
-    signal: AbortSignal,
+    signal?: AbortSignal,
     retries: number = 3,
     delayMs: number = 300,
 ): Promise<T> => {

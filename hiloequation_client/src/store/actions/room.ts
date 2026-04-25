@@ -172,12 +172,13 @@ export const joinRoomCases: AppAsyncThunkActionCases<
     fulfilled: (state, action) => {
         state.status = 'idle';
         if (action.payload) {
-            const { _id, status, hostId, maxPlayers, players, playerId } = action.payload;
+            const { _id, status, roomCode, hostId, maxPlayers, players } = action.payload;
             state.id = _id;
             state.roomStatus = status || 'WAITING';
+            state.roomCode = roomCode;
             state.hostId = hostId;
             state.maxPlayers = maxPlayers;
-            state.players = [...players, playerId];
+            state.players = [...players];
         }
     },
     rejected: (state) => {

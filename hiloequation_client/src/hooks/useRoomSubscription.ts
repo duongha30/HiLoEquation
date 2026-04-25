@@ -1,6 +1,6 @@
 import { selectIsSocketConnected } from "@/store";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { addPlayerToRoom } from "@/store/reducers/room";
+import { updatePlayersInRoom } from "@/store/reducers/room";
 import { ON_PLAYER_JOIN } from "@/store/socket/events";
 import { getSocket } from "@/store/socket/socket";
 import type { JoinRoomResponse } from "@/types/socketEventType";
@@ -17,11 +17,14 @@ export const useRoomSubscription = () => {
         }
 
         socket.on(ON_PLAYER_JOIN, (data: JoinRoomResponse) => {
+            console.log('data', data)
             if (data.status !== 200) {
                 console.error('Failed to join room:', data);
                 return;
             }
-            dispatch(addPlayerToRoom({ playerId: data.playerId }));
+            if (data?.players) {
+                dispatch(updatePlayersInRoom({ players: data?.players }));
+            }
         });
         return () => {
             socket.off(ON_PLAYER_JOIN);

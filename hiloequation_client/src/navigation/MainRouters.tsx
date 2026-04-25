@@ -30,13 +30,13 @@ const PrivateRoute = ({ children }: { children: React.ReactElement }) => {
 export default function MainRouters() {
   return (
     <>
-      {/* <AuthRouter />
-      <PrivateRoute> */}
-      <Routes>
-        <Route path={url.home} element={<Home />} />
-        <Route path={url.room} element={<Room />} />
-      </Routes>
-      {/* </PrivateRoute> */}
+      <AuthRouter />
+      <PrivateRoute>
+        <Routes>
+          <Route path={url.home} element={<Home />} />
+          <Route path={url.room} element={<Room />} />
+        </Routes>
+      </PrivateRoute>
     </>
   )
 }

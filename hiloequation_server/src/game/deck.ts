@@ -1,6 +1,7 @@
 "use strict"
 
 import type { CardData, Suit } from './types.ts';
+import crypto from 'crypto';
 
 
 const SUITS: Suit[] = ['gold', 'silver', 'bronze', 'black'];
@@ -72,19 +73,20 @@ export function drawCard(deck: CardData[]) {
     return drawOnlyNumber(rest);
 }
 
-export function addSymbolIfNotExists(deck: CardData[], newCard: CardData | CardData[]): CardData[] {
-    if (!Array.isArray(newCard)) {
-        deck.push(newCard);
-        return deck;
-    }
+export function encryptCards(cards: CardData[], playerId: string): CardData[] {
+    return cards.map((card) => {
+        if (card.type !== 'number') return card;
 
-    for (const card of newCard) {
-        if (card.type === 'sqrt' || card.type === 'multiply') {
-            const exists = deck.some(existingCard => existingCard.type === card.type);
-            if (!exists) {
-                deck.push(card);
-            }
-        }
-    }
-    return deck;
+        const payload = JSON.stringify({ id: card.id, type: card.type, suit: card.suit, value: card.value });
+        const key = crypto.createHash('sha256').update(playerId + 'salt').digest();
+        const iv = crypto.randomBytes(16);
+        const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+
+        let encrypted = cipher.update(payload, 'utf8', 'hex');
+        encrypted += cipher.final('hex');
+
+        const encryptedData = Buffer.concat([iv, Buffer.from(encrypted, 'hex')]).toString('base64');
+
+        return { encryptedData };
+    });
 }

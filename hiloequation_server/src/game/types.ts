@@ -5,12 +5,12 @@ type CardType = 'number' | 'sqrt' | 'multiply' | 'operation';
 type OperationSymbol = '+' | '-' | '÷';
 
 type CardData = {
-    id: string;
-    type: CardType;
+    id?: string;
+    type?: CardType;
     suit?: Suit;
     value?: number;
     operation?: OperationSymbol;
-    hidden?: boolean;
+    encryptedData?: string;
 };
 
 // Game Core

@@ -10,7 +10,7 @@ export type CardData = {
   suit?: Suit;
   value?: number;
   operation?: OperationSymbol;
-  hidden?: boolean;
+  encryptedData?: string;
 };
 
 export const DEFAULT_OPERATION_CARDS: CardData[] = [

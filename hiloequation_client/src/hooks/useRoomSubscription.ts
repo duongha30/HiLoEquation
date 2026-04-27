@@ -6,6 +6,7 @@ import { getSocket } from "@/store/socket/socket";
 import { useRoomStore } from "@/screens/Room/roomStore";
 import type { ServerRoomState } from '@/store/reducers/game';
 import { useEffect } from 'react';
+import { decryptCards } from "@/utils/card";
 
 type PlayerJoinSocketEvent = { status: number; players?: string[] };
 type StartGameSocketEvent = { status: number; roomState: ServerRoomState };
@@ -15,6 +16,7 @@ export const useRoomSubscription = () => {
     const isConnected = useAppSelector(selectIsSocketConnected);
     const setPlayerReady = useRoomStore((s) => s.setPlayerReady);
     const players = useAppSelector(selectAllPlayers);
+    const playerId = useAppSelector(selectUserId);
     const roomCode = useAppSelector(selectRoomCode);
 
     useEffect(() => {
@@ -45,10 +47,23 @@ export const useRoomSubscription = () => {
             getSocket()?.emit(EMIT_DEAL_CARD, { roomCode, players, times: 1, isFirstDraw: true });
         };
 
-        const onDealCard = (data: any) => {
+        const onDealCard = async (data: any) => {
             console.log('onDealCard data', data)
             if (data.status !== 200 || !data.roomState) return;
-            dispatch(setGameState(data.roomState));
+            const myHand = data.roomState.hands[playerId];
+            const myCards = myHand?.cards || [];
+            const decryptedHands = await decryptCards(myCards, playerId)
+            const roomState = {
+                ...data.roomState,
+                hands: {
+                    ...data.roomState.hands,
+                    [playerId]: {
+                        ...myHand,
+                        cards: decryptedHands,
+                    },
+                }
+            }
+            dispatch(setGameState(roomState));
         }
 
         socket.on(ON_PLAYER_JOIN, onPlayerJoin);

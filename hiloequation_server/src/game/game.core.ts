@@ -1,5 +1,5 @@
 'use strict';
-import { addSymbolIfNotExists, createDeck, drawOnlyNumber, drawCard, shuffleDeck } from './deck.ts';
+import { createDeck, drawOnlyNumber, drawCard, shuffleDeck, encryptCards } from './deck.ts';
 import type {
     CardData,
     GameState,
@@ -161,7 +161,7 @@ class GameCore implements IGameCore {
                 : [];
 
             const markedDrawnCards = isFirstDraw
-                ? drawnCards.map((card) => ({ ...card, hidden: true }))
+                ? encryptCards(drawnCards, playerId)
                 : drawnCards;
 
             nextHands[playerId] = {

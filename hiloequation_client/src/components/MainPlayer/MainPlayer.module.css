@@ -1,0 +1,91 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    width: 90vw;
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.75rem 1.25rem;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(6px);
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 1rem 1rem 0 0;
+}
+
+.cashDisplay {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fbbf24;
+    letter-spacing: 0.05em;
+}
+
+.cardArea {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.btn {
+    padding: 0.45rem 1rem;
+    border: none;
+    border-radius: 0.4rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    background: #374151;
+    color: #fff;
+}
+
+.btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.foldBtn {
+    background: #dc2626;
+}
+
+.foldBtn:hover:not(:disabled) {
+    background: #b91c1c;
+}
+
+.betBtn {
+    background: #16a34a;
+}
+
+.betBtn:hover:not(:disabled) {
+    background: #15803d;
+}
+
+.betControls {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.betInput {
+    width: 5rem;
+    padding: 0.4rem 0.5rem;
+    text-align: center;
+    border-radius: 0.4rem;
+    border: 1px solid #4b5563;
+    background: #1f2937;
+    color: #fff;
+    font-size: 0.9rem;
+}
+
+.betInput::-webkit-inner-spin-button,
+.betInput::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+}

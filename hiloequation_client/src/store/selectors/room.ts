@@ -5,7 +5,22 @@ export const selectRoomTest = createAppSelector(
     (roomReducer) => roomReducer.status,
 );
 
+export const selectRoomId = createAppSelector(
+    [(state) => state.roomReducer],
+    (roomReducer) => roomReducer.id,
+);
+
+export const selectAllPlayers = createAppSelector(
+    [(state) => state.roomReducer],
+    (roomReducer) => roomReducer.players,
+);
+
 export const selectAllGuess = createAppSelector(
     [(state) => state.roomReducer.players, (state) => state.userReducer.userId],
     (players, userId) => players?.filter((id) => id !== userId) ?? [],
+);
+
+export const isHostPlayer = createAppSelector(
+    [(state) => state.roomReducer.hostId, (state) => state.userReducer.userId],
+    (hostId, userId) => hostId === userId,
 );

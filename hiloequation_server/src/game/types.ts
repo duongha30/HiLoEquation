@@ -10,6 +10,7 @@ type CardData = {
     suit?: Suit;
     value?: number;
     operation?: OperationSymbol;
+    hidden?: boolean;
 };
 
 // Game Core

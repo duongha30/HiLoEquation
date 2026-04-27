@@ -6,7 +6,24 @@ import {
 } from '../events';
 import { Game } from '../../game';
 import { emitHandler } from '../../utils/socketUtils';
-import { GameState } from '../../game/types';
+import type { GameState, HandsType } from '../../game/types';
+
+const maskHandsForViewer = (hands: HandsType, viewerId: string): HandsType => {
+    const result: HandsType = {};
+    for (const pid in hands) {
+        if (pid === viewerId) {
+            result[pid] = hands[pid];
+        } else {
+            result[pid] = {
+                ...hands[pid],
+                cards: hands[pid].cards?.map((card) =>
+                    card.hidden ? { id: card.id, type: card.type, hidden: true } : card
+                ) ?? null,
+            };
+        }
+    }
+    return result;
+};
 
 export default (io: Server, socket: Socket) => {
     socket.on(ON_START_GAME, async ({ roomCode, playerIds }: { roomCode: string; playerIds: string[] }) => {
@@ -23,27 +40,24 @@ export default (io: Server, socket: Socket) => {
         });
     });
 
-    socket.on(ON_DEAL_CARD, async ({ roomCode, playerId, times = 1, isFirstDraw = false }: { roomCode: string; playerId: string; times?: number; isFirstDraw?: boolean }) => {
-        if (!playerId || socket.data.playerId !== playerId) {
+    socket.on(ON_DEAL_CARD, async ({ roomCode, players, times = 1, isFirstDraw = false }: { roomCode: string; players: string[]; times?: number; isFirstDraw?: boolean }) => {
+        const roomState = await Game.deal(roomCode, players, times, isFirstDraw);
+        if (!roomState) {
             socket.emit(EMIT_CARD_DEAL, { status: ERROR });
             return;
         }
 
-        const dealResult = await Game.deal(roomCode, playerId, times, isFirstDraw);
-        if (!dealResult) { socket.emit(EMIT_CARD_DEAL, { status: ERROR }); return; }
-
-        const { playerState, round } = dealResult;
-        if (!playerState) { socket.emit(EMIT_CARD_DEAL, { status: ERROR }); return; }
-
-        const socketIdsInRoom = io.sockets.adapter.rooms.get(roomCode);
-        if (!socketIdsInRoom) return;
-
-        for (const socketId of socketIdsInRoom) {
-            const roomSocket = io.sockets.sockets.get(socketId);
-            if (roomSocket?.data?.playerId === playerId) {
-                roomSocket.emit(EMIT_CARD_DEAL, { roomCode, playerId, cards: playerState.cards, score: playerState.score, cash: playerState.cash, bet: playerState.bet, round });
-                break;
-            }
+        const sockets = await io.in(roomCode).fetchSockets();
+        for (const s of sockets) {
+            const viewerId: string = s.data.playerId;
+            s.emit(EMIT_CARD_DEAL, {
+                status: SUCCESS,
+                roomState: {
+                    round: roomState.round,
+                    totalBetting: roomState.totalBetting,
+                    hands: maskHandsForViewer(roomState.hands, viewerId),
+                },
+            });
         }
     });
 

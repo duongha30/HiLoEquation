@@ -142,9 +142,8 @@ export const fetchRoomByIdCases: AppAsyncThunkActionCases<
     fulfilled: (state, action) => {
         state.status = 'idle';
         if (action.payload) {
-            const { _id, status, hostId, maxPlayers } = action.payload;
+            const { _id, hostId, maxPlayers } = action.payload;
             state.id = _id;
-            state.roomStatus = status;
             state.hostId = hostId;
             state.maxPlayers = maxPlayers;
         }
@@ -164,10 +163,9 @@ export const createRoomCases: AppAsyncThunkActionCases<
     fulfilled: (state, action) => {
         state.status = 'idle';
         if (action.payload) {
-            const { _id, roomCode, status, hostId, maxPlayers } = action.payload;
+            const { _id, roomCode, hostId, maxPlayers } = action.payload;
             state.id = _id;
             state.roomCode = roomCode;
-            state.roomStatus = status || 'WAITING';
             state.hostId = hostId;
             state.maxPlayers = maxPlayers;
             state.players = [hostId]; // Host is first player
@@ -188,9 +186,8 @@ export const joinRoomCases: AppAsyncThunkActionCases<
     fulfilled: (state, action) => {
         state.status = 'idle';
         if (action.payload) {
-            const { _id, status, roomCode, hostId, maxPlayers, players } = action.payload;
+            const { _id, roomCode, hostId, maxPlayers, players } = action.payload;
             state.id = _id;
-            state.roomStatus = status || 'WAITING';
             state.roomCode = roomCode;
             state.hostId = hostId;
             state.maxPlayers = maxPlayers;

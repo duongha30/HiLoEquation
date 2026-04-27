@@ -1,4 +1,4 @@
-import { selectIsSocketConnected, setGameState } from "@/store";
+import { selectIsSocketConnected, setGameState, setPlayingStatus } from "@/store";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { updatePlayersInRoom } from "@/store/reducers/room";
 import { ON_PLAYER_JOIN, ON_PLAYER_READY, ON_START } from "@/store/socket/events";
@@ -39,6 +39,7 @@ export const useRoomSubscription = () => {
         const onStartGame = (data: StartGameSocketEvent) => {
             if (data.status !== 200 || !data.roomState) return;
             dispatch(setGameState(data.roomState));
+            dispatch(setPlayingStatus(true));
         };
 
         socket.on(ON_PLAYER_JOIN, onPlayerJoin);

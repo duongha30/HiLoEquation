@@ -1,5 +1,11 @@
 import styles from './StartReadyButton.module.css';
-import { isHostPlayer, selectAllGuess, selectRoomCode, selectAllPlayers } from '@/store';
+import {
+    isHostPlayer,
+    selectAllGuess,
+    selectRoomCode,
+    selectAllPlayers,
+    selectIsPlaying
+} from '@/store';
 import { useAppSelector } from '@/store/hooks';
 import { selectUserId } from '@/store/selectors/user';
 import { useRoomStore } from '../../roomStore';
@@ -12,6 +18,7 @@ export function StartReadyButton() {
     const roomCode = useAppSelector(selectRoomCode);
     const players = useAppSelector(selectAllPlayers);
     const userId = useAppSelector(selectUserId);
+    const isPlaying = useAppSelector(selectIsPlaying);
     const { readyPlayers, setPlayerReady } = useRoomStore();
 
     const isReady = readyPlayers.includes(userId ?? '');
@@ -26,6 +33,7 @@ export function StartReadyButton() {
         setPlayerReady(userId ?? '', next);
         getSocket()?.emit(EMIT_PLAYER_READY, { roomCode, playerId: userId, isReady: next });
     };
+    if (isPlaying) return null;
 
     return (
         <>

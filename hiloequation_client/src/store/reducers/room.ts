@@ -8,11 +8,10 @@ const roomAdapter = createEntityAdapter<Room, string>({
     selectId: room => room.roomId,
 });
 
-const initialState = roomAdapter.getInitialState<{ status: string, id: string, players: string[], roomStatus: string, hostId: string, maxPlayers: number, roomCode: string }>({
+const initialState = roomAdapter.getInitialState<{ status: string, id: string, players: string[], hostId: string, maxPlayers: number, roomCode: string }>({
     status: 'idle',
     id: '',
     players: [],
-    roomStatus: 'WAITING',
     hostId: '',
     maxPlayers: 0,
     roomCode: '',

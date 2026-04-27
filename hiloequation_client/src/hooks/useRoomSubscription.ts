@@ -1,12 +1,14 @@
-import { selectIsSocketConnected } from "@/store";
+import { selectIsSocketConnected, setGameState } from "@/store";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { updatePlayersInRoom } from "@/store/reducers/room";
-import { ON_PLAYER_JOIN, ON_PLAYER_READY } from "@/store/socket/events";
+import { ON_PLAYER_JOIN, ON_PLAYER_READY, ON_START } from "@/store/socket/events";
 import { getSocket } from "@/store/socket/socket";
 import { useRoomStore } from "@/screens/Room/roomStore";
-import { useEffect } from "react";
+import type { ServerRoomState } from '@/store/reducers/game';
+import { useEffect } from 'react';
 
 type PlayerJoinSocketEvent = { status: number; players?: string[] };
+type StartGameSocketEvent = { status: number; roomState: ServerRoomState };
 
 export const useRoomSubscription = () => {
     const dispatch = useAppDispatch();
@@ -34,12 +36,19 @@ export const useRoomSubscription = () => {
             setPlayerReady(data.playerId, data.isReady);
         };
 
+        const onStartGame = (data: StartGameSocketEvent) => {
+            if (data.status !== 200 || !data.roomState) return;
+            dispatch(setGameState(data.roomState));
+        };
+
         socket.on(ON_PLAYER_JOIN, onPlayerJoin);
         socket.on(ON_PLAYER_READY, onPlayerReady);
+        socket.on(ON_START, onStartGame);
 
         return () => {
             socket.off(ON_PLAYER_JOIN, onPlayerJoin);
             socket.off(ON_PLAYER_READY, onPlayerReady);
+            socket.off(ON_START, onStartGame);
         };
     }, [isConnected, setPlayerReady, dispatch]);
 };

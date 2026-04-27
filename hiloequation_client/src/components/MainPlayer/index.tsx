@@ -2,12 +2,13 @@ import styles from './MainPlayer.module.css';
 import { useDroppable } from '@dnd-kit/react';
 import { Card } from '@/components';
 import type { CardData } from '@/types/card';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useAppSelector } from '@/store/hooks';
 import { selectUserId } from '@/store/selectors/user';
-import { selectRoomId } from '@/store/selectors/room';
+import { selectRoomCode } from '@/store/selectors/room';
 import { getSocket } from '@/store/socket/socket';
 import { EMIT_BET_COIN, EMIT_FOLD_CARD } from '@/store/socket/events';
+import { selectMyHand } from '@/store';
 
 const BET_STEP = 10;
 
@@ -19,11 +20,13 @@ type MainPlayerProps = {
     cardTranslates?: Record<string, number>;
 };
 
-export const MainPlayer = ({ id, cash = 5000, cards, onCardMount, cardTranslates }: MainPlayerProps) => {
+export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlayerProps) => {
     const { ref } = useDroppable({ id });
     const [betAmount, setBetAmount] = useState(0);
     const playerId = useAppSelector(selectUserId);
-    const roomId = useAppSelector(selectRoomId);
+    const roomCode = useAppSelector(selectRoomCode);
+    const myHand = useAppSelector(selectMyHand);
+    const cash = useMemo(() => myHand?.cash ?? 0, [myHand?.cash]);
 
     const handleIncrease = () => {
         setBetAmount((prev) => Math.min(prev + BET_STEP, cash));
@@ -40,12 +43,12 @@ export const MainPlayer = ({ id, cash = 5000, cards, onCardMount, cardTranslates
 
     const handleBet = () => {
         if (betAmount <= 0 || betAmount > cash) return;
-        getSocket()?.emit(EMIT_BET_COIN, { roomId, playerId, betting: betAmount });
+        getSocket()?.emit(EMIT_BET_COIN, { roomCode, playerId, betting: betAmount });
         setBetAmount(0);
     };
 
     const handleFold = () => {
-        getSocket()?.emit(EMIT_FOLD_CARD, { roomId, playerId });
+        getSocket()?.emit(EMIT_FOLD_CARD, { roomCode, playerId });
     };
 
     return (

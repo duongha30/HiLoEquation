@@ -6,7 +6,7 @@ import { useRoomSubscription } from '@/hooks';
 import { useDrapDrop } from './useDragDrop';
 import { useRoomStore } from './roomStore';
 import { useAppSelector } from '@/store/hooks';
-import { isHostPlayer, selectAllGuess, selectRoomId, selectAllPlayers } from '@/store';
+import { isHostPlayer, selectAllGuess, selectRoomCode, selectAllPlayers } from '@/store';
 import { selectUserId } from '@/store/selectors/user';
 import { EMIT_START_GAME, EMIT_PLAYER_READY } from '@/store/socket/events';
 import { getSocket } from '@/store/socket/socket';
@@ -15,7 +15,7 @@ export const Room = () => {
   const cardRefs = useRef<Map<string, HTMLElement>>(new Map());
   const guess = useAppSelector(selectAllGuess);
   const isHost = useAppSelector(isHostPlayer);
-  const roomId = useAppSelector(selectRoomId);
+  const roomCode = useAppSelector(selectRoomCode);
   const players = useAppSelector(selectAllPlayers);
   const userId = useAppSelector(selectUserId);
   const { deckCards, playerCards, deliveryCount, activeId, cardTranslates, resetDeck, readyPlayers, setPlayerReady } = useRoomStore();
@@ -30,7 +30,7 @@ export const Room = () => {
   useEffect(() => { playerCardsRef.current = playerCards; }, [playerCards]);
 
   const handleStartGame = () => {
-    getSocket()?.emit(EMIT_START_GAME, { roomId, players });
+    getSocket()?.emit(EMIT_START_GAME, { roomCode, playerIds: players });
   };
 
   const isReady = readyPlayers.includes(userId ?? '');
@@ -39,7 +39,7 @@ export const Room = () => {
   const handleToggleReady = () => {
     const next = !isReady;
     setPlayerReady(userId ?? '', next);
-    getSocket()?.emit(EMIT_PLAYER_READY, { roomCode: roomId, playerId: userId, isReady: next });
+    getSocket()?.emit(EMIT_PLAYER_READY, { roomCode: roomCode, playerId: userId, isReady: next });
   };
 
   const PLAYER_POSITION_STYLES = [styles.playerLeft, styles.playerTop, styles.playerRight];

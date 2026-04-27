@@ -22,9 +22,7 @@ const roomSlice = createSlice({
     name: 'room',
     initialState,
     reducers: {
-        leaveRoom: state => {
-            state.players = [];
-        },
+        leaveRoom: () => initialState,
         updatePlayersInRoom: (state, action) => {
             if (!state.players) {
                 state.players = [];

@@ -3,18 +3,18 @@ import type { Server } from 'socket.io';
 
 interface EmitHandlerOptions {
     io: Server;
-    roomId: string;
+    roomCode: string;
     eventName: string;
-    result: unknown;
-    buildSuccessPayload?: (value: unknown) => unknown;
+    result: any;
+    buildSuccessPayload?: (value: any) => any;
 }
 
-const emitHandler = ({ io, roomId, eventName, result, buildSuccessPayload = (v) => v }: EmitHandlerOptions) => {
+const emitHandler = ({ io, roomCode, eventName, result, buildSuccessPayload = (v) => v }: EmitHandlerOptions) => {
     if (!result) {
-        io.to(roomId).emit(eventName, { status: ERROR });
+        io.to(roomCode).emit(eventName, { status: ERROR });
         return false;
     }
-    io.to(roomId).emit(eventName, buildSuccessPayload(result));
+    io.to(roomCode).emit(eventName, buildSuccessPayload(result));
     return true;
 };
 

@@ -5,9 +5,9 @@ export const selectRoomTest = createAppSelector(
     (roomReducer) => roomReducer.status,
 );
 
-export const selectRoomId = createAppSelector(
+export const selectRoomCode = createAppSelector(
     [(state) => state.roomReducer],
-    (roomReducer) => roomReducer.id,
+    (roomReducer) => roomReducer.roomCode,
 );
 
 export const selectAllPlayers = createAppSelector(

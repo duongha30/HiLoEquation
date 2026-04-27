@@ -1,12 +1,16 @@
 import type { DragEndEvent, DragStartEvent, DragMoveEvent } from '@dnd-kit/react';
-import { deliverRound1, deliverRound2 } from '@/utils/deck';
 import { useRef } from 'react';
 import type { CardData } from '@/types/card';
-import { useRoomStore } from './roomStore';
+import { useRoomStore } from '../roomStore';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { updateHand } from '@/store/reducers/game';
+import { selectUserId } from '@/store/selectors/user';
 
 
 export const useDrapDrop = (playerCardsRef: React.RefObject<CardData[]>, cardRefs: React.RefObject<Map<string, HTMLElement>>) => {
-    const { deckCards, playerCards, deliveryCount, setActiveId, setCardTranslates, setPlayerCards, setDeckCards, setDeliveryCount } = useRoomStore();
+    const { setCardTranslates } = useRoomStore();
+    const dispatch = useAppDispatch();
+    const playerId = useAppSelector(selectUserId);
     const snapRects = useRef<Map<string, DOMRect>>(new Map()); // Snapshotted rects of all player cards at the moment drag starts
     const insertAtRef = useRef<number>(0); // Tracks where the dragged card would land if dropped right now
 
@@ -22,7 +26,6 @@ export const useDrapDrop = (playerCardsRef: React.RefObject<CardData[]>, cardRef
         });
         snapRects.current = snap;
         insertAtRef.current = playerCardsRef.current.findIndex((c) => c.id === sourceId);
-        setActiveId(sourceId);
     }
 
     const handleDragMove = (event: DragMoveEvent) => {
@@ -89,7 +92,6 @@ export const useDrapDrop = (playerCardsRef: React.RefObject<CardData[]>, cardRef
     }
 
     const handleDragEnd = (event: DragEndEvent) => {
-        setActiveId(null);
         setCardTranslates({});
         snapRects.current = new Map();
 
@@ -99,35 +101,22 @@ export const useDrapDrop = (playerCardsRef: React.RefObject<CardData[]>, cardRef
         if (!sourceId) return;
 
         const insertAt = insertAtRef.current;
-        setPlayerCards((prev) => {
-            const origIdx = prev.findIndex((c) => c.id === sourceId);
-            if (origIdx === -1 || origIdx === insertAt) return prev;
-            const next = [...prev];
-            const [moved] = next.splice(origIdx, 1);
-            next.splice(insertAt, 0, moved);
-            return next;
-        });
+        const prev = playerCardsRef.current;
+        const origIdx = prev.findIndex((c) => c.id === sourceId);
+        if (origIdx === -1 || origIdx === insertAt) return;
+
+        const next = [...prev];
+        const [moved] = next.splice(origIdx, 1);
+        next.splice(insertAt, 0, moved);
+
+        if (playerId) {
+            dispatch(updateHand({ playerId, hand: { cards: next } }));
+        }
     };
 
-    const handleCardDelivery = () => {
-        const numberCardCount = playerCards.filter((c) => c.type === 'number').length;
-        if (numberCardCount >= 4) return;
-
-        const round = deliveryCount + 1;
-        const isRound2 = round % 2 === 0;
-
-        const { delivered, deck: newDeck } = isRound2
-            ? deliverRound2(deckCards)
-            : deliverRound1(deckCards);
-
-        setDeckCards(newDeck);
-        setPlayerCards((prev) => [...prev, ...delivered]);
-        setDeliveryCount(round);
-    };
     return {
         handleDragStart,
         handleDragMove,
         handleDragEnd,
-        handleCardDelivery,
     };
 }

@@ -1,12 +1,12 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { DragDropProvider } from '@dnd-kit/react';
 import styles from './Room.module.css';
 import { Deck, MainPlayer, Player } from '@/components';
 import { useRoomSubscription } from '@/hooks';
-import { useDrapDrop } from './useDragDrop';
+import { useDrapDrop } from './hooks/useDragDrop';
 import { useRoomStore } from './roomStore';
 import { useAppSelector } from '@/store/hooks';
-import { isHostPlayer, selectAllGuess, selectRoomCode, selectAllPlayers } from '@/store';
+import { isHostPlayer, selectAllGuess, selectRoomCode, selectAllPlayers, selectMyHand } from '@/store';
 import { selectUserId } from '@/store/selectors/user';
 import { EMIT_START_GAME, EMIT_PLAYER_READY } from '@/store/socket/events';
 import { getSocket } from '@/store/socket/socket';
@@ -18,15 +18,20 @@ export const Room = () => {
   const roomCode = useAppSelector(selectRoomCode);
   const players = useAppSelector(selectAllPlayers);
   const userId = useAppSelector(selectUserId);
-  const { deckCards, playerCards, deliveryCount, activeId, cardTranslates, resetDeck, readyPlayers, setPlayerReady } = useRoomStore();
+  const myHand = useAppSelector(selectMyHand);
+
+  const playerCards = useMemo(() => myHand?.cards ?? [], [myHand?.cards]);
+  const { cardTranslates, readyPlayers, setPlayerReady } = useRoomStore();
   const playerCardsRef = useRef(playerCards);
+
   useRoomSubscription();
+
   const {
     handleDragStart,
     handleDragMove,
     handleDragEnd,
-    handleCardDelivery,
   } = useDrapDrop(playerCardsRef, cardRefs);
+
   useEffect(() => { playerCardsRef.current = playerCards; }, [playerCards]);
 
   const handleStartGame = () => {
@@ -61,7 +66,7 @@ export const Room = () => {
           {isHost ? (
             <button
               onClick={handleStartGame}
-              disabled={!allGuestsReady || deliveryCount > 0}
+              disabled={!allGuestsReady}
               className={styles.cardDeliveryBtn}
             >
               Start Game!
@@ -74,10 +79,7 @@ export const Room = () => {
               {isReady ? 'Cancel Ready' : 'Ready'}
             </button>
           )}
-          <Deck
-            cards={deckCards}
-            onShuffle={resetDeck}
-          />
+          <Deck />
         </div>
         <MainPlayer
           id="main-player"

@@ -1,6 +1,7 @@
-import { disconnectSocketReducer, selectIsSocketConnected, connectSocketThunk } from "@/store";
+import { disconnectSocketReducer, selectIsSocketConnected, connectSocketThunk, leaveRoom, resetGame, selectUserId, selectRoomCode } from "@/store";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { disconnectSocket } from "@/store/socket/socket";
+import { EMIT_LEAVE_ROOM } from "@/store/socket/events";
+import { disconnectSocket, getSocket } from "@/store/socket/socket";
 import { useEffect } from "react";
 
 export const useConnectSocket = () => {
@@ -17,11 +18,16 @@ export const useConnectSocket = () => {
 
 export const useDisconnectSocket = () => {
     const dispatch = useAppDispatch();
+    const playerId = useAppSelector(selectUserId);
+    const roomCode = useAppSelector(selectRoomCode);
 
     useEffect(() => {
         return () => {
+            getSocket()?.emit(EMIT_LEAVE_ROOM, { roomCode, playerId });
             disconnectSocket();
             dispatch(disconnectSocketReducer());
+            dispatch(resetGame());
+            dispatch(leaveRoom());
         }
     }, []);
 }

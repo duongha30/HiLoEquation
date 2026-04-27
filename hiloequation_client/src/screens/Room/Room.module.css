@@ -20,6 +20,15 @@
   margin-bottom: 1.5rem;
 }
 
+.cardDeliveryBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.readyActive {
+  background: #16a34a;
+}
+
 .deckSection {
   position: absolute;
   top: 50%;

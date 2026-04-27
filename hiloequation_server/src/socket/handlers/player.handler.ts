@@ -4,17 +4,17 @@ import { Game } from '../../game';
 import { emitHandler } from '../../utils/socketUtils';
 
 export default (io: Server, socket: Socket) => {
-    socket.on(ON_BET_COIN, ({ roomId, playerId, betting }: { roomId: string; playerId: string; betting: number }) => {
+    socket.on(ON_BET_COIN, async ({ roomCode, playerId, betting }: { roomCode: string; playerId: string; betting: number }) => {
         if (!playerId || socket.data.playerId !== playerId) { socket.emit(EMIT_BETTING, { status: ERROR }); return; }
 
-        const playerState = Game.bet(roomId, playerId, betting);
-        emitHandler({ io, roomId, eventName: EMIT_BETTING, result: playerState, buildSuccessPayload: (value) => ({ playerState: value, status: SUCCESS }) });
+        const playerState = await Game.bet(roomCode, playerId, betting);
+        emitHandler({ io, roomCode, eventName: EMIT_BETTING, result: playerState, buildSuccessPayload: (value) => ({ playerState: value, status: SUCCESS }) });
     });
 
-    socket.on(ON_FOLD_CARD, ({ roomId, playerId }: { roomId: string; playerId: string }) => {
+    socket.on(ON_FOLD_CARD, async ({ roomCode, playerId }: { roomCode: string; playerId: string }) => {
         if (!playerId || socket.data.playerId !== playerId) { socket.emit(EMIT_FOLDING, { status: ERROR }); return; }
 
-        const playerState = Game.fold(roomId, playerId);
-        emitHandler({ io, roomId, eventName: EMIT_FOLDING, result: playerState, buildSuccessPayload: (value) => ({ playerState: value, status: SUCCESS }) });
+        const playerState = await Game.fold(roomCode, playerId);
+        emitHandler({ io, roomCode, eventName: EMIT_FOLDING, result: playerState, buildSuccessPayload: (value) => ({ playerState: value, status: SUCCESS }) });
     });
 };

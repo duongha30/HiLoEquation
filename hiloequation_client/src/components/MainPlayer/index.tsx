@@ -14,7 +14,6 @@ const BET_STEP = 10;
 
 type MainPlayerProps = {
     id: string;
-    cash: number;
     cards: CardData[];
     onCardMount?: (id: string, el: HTMLElement | null) => void;
     cardTranslates?: Record<string, number>;

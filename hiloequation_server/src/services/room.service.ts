@@ -23,7 +23,7 @@ class RoomService {
         if (!newRoom) throw new BadRequestError({ message: 'Create new room failed!' });
 
         return getInfoData({
-            fields: ['_id', 'roomCode', 'status', 'maxPlayers', 'hostId'],
+            fields: ['_id', 'roomCode', 'maxPlayers', 'hostId'],
             object: newRoom as unknown as Record<string, unknown>,
         });
     }
@@ -35,7 +35,7 @@ class RoomService {
         if (!room) throw new NotFoundError();
 
         return getInfoData({
-            fields: ['_id', 'status', 'maxPlayers', 'hostId', 'roomCode'],
+            fields: ['_id', 'maxPlayers', 'hostId', 'roomCode'],
             object: room as unknown as Record<string, unknown>,
         });
     }
@@ -53,7 +53,7 @@ class RoomService {
         await redisPubSubService.publish(roomCode, { message: 'New user joined!', playerId });
 
         return getInfoData({
-            fields: ['_id', 'status', 'maxPlayers', 'hostId', 'roomCode'],
+            fields: ['_id', 'maxPlayers', 'hostId', 'roomCode'],
             object: room as unknown as Record<string, unknown>,
         });
     }

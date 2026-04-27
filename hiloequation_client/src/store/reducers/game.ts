@@ -16,13 +16,15 @@ export type ServerRoomState = {
 };
 
 export type GameState = ServerRoomState & {
-    status: 'idle' | 'playing';
+    status: 'idle' | 'loading' | 'failed';
+    isPlaying: boolean;
 };
 
 const initialState: GameState = {
     round: 0,
     totalBetting: 0,
     hands: {},
+    isPlaying: false,
     status: 'idle',
 };
 
@@ -34,7 +36,6 @@ const gameSlice = createSlice({
             state.round = action.payload.round;
             state.totalBetting = action.payload.totalBetting;
             state.hands = action.payload.hands;
-            state.status = 'playing';
         },
         updateHand: (state, action: PayloadAction<{ playerId: string; hand: Partial<HandSnapshot>; totalBetting?: number }>) => {
             const { playerId, hand, totalBetting } = action.payload;
@@ -45,9 +46,12 @@ const gameSlice = createSlice({
                 state.totalBetting = totalBetting;
             }
         },
+        setPlayingStatus: (state, action: PayloadAction<boolean>) => {
+            state.isPlaying = action.payload;
+        },
         resetGame: () => initialState,
     },
 });
 
-export const { setGameState, updateHand, resetGame } = gameSlice.actions;
+export const { setGameState, updateHand, resetGame, setPlayingStatus } = gameSlice.actions;
 export default gameSlice.reducer;

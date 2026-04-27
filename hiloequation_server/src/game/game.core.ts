@@ -9,21 +9,21 @@ import { INIT_CASH, INIT_SCORE, INIT_BETTING, DEFAULT_OPERATION_CARDS } from './
 import redisClient from '../dbs/init.redis';
 import type { IGameCore } from '../interfaces/IGameCore';
 
-const gameKey = (roomId: string) => `game:state:${roomId}`;
+const gameKey = (roomCode: string) => `game:state:${roomCode}`;
 
 class GameCore implements IGameCore {
-    private async getState(roomId: string): Promise<GameState | null> {
-        const raw = await redisClient.get(gameKey(roomId));
+    private async getState(roomCode: string): Promise<GameState | null> {
+        const raw = await redisClient.get(gameKey(roomCode));
         if (!raw) return null;
         return JSON.parse(raw) as GameState;
     }
 
-    private async setState(roomId: string, state: GameState): Promise<void> {
-        await redisClient.set(gameKey(roomId), JSON.stringify(state));
+    private async setState(roomCode: string, state: GameState): Promise<void> {
+        await redisClient.set(gameKey(roomCode), JSON.stringify(state));
     }
 
-    private async deleteState(roomId: string): Promise<void> {
-        await redisClient.del(gameKey(roomId));
+    private async deleteState(roomCode: string): Promise<void> {
+        await redisClient.del(gameKey(roomCode));
     }
 
     private cloneCards(cards: CardData[] | null): CardData[] | null {
@@ -60,14 +60,14 @@ class GameCore implements IGameCore {
         return roomState.hands[playerId] ?? null;
     }
 
-    async getRoom(roomId: string): Promise<GameState | undefined> {
-        const roomState = await this.getState(roomId);
+    async getRoom(roomCode: string): Promise<GameState | undefined> {
+        const roomState = await this.getState(roomCode);
         if (!roomState) return undefined;
         return this.cloneRoom(roomState);
     }
 
-    async getPlayer(roomId: string, playerId: string) {
-        const roomState = await this.getState(roomId);
+    async getPlayer(roomCode: string, playerId: string) {
+        const roomState = await this.getState(roomCode);
         if (!roomState) return undefined;
 
         const playerState = roomState.hands[playerId];
@@ -81,25 +81,25 @@ class GameCore implements IGameCore {
         };
     }
 
-    async destroy(roomId: string): Promise<void> {
-        await this.deleteState(roomId);
+    async destroy(roomCode: string): Promise<void> {
+        await this.deleteState(roomCode);
     }
 
-    async clearPlayer(roomId: string, playerId: string) {
-        const roomState = await this.getState(roomId);
+    async clearPlayer(roomCode: string, playerId: string) {
+        const roomState = await this.getState(roomCode);
         if (!roomState) return undefined;
         if (!roomState.hands[playerId]) return undefined;
 
         delete roomState.hands[playerId];
-        await this.setState(roomId, roomState);
-        return this.getRoom(roomId);
+        await this.setState(roomCode, roomState);
+        return this.getRoom(roomCode);
     }
 
-    async start(roomId: string, players: string[]) {
+    async start(roomCode: string, players: string[]) {
         if (players.length === 0) return undefined;
 
         // Preserve existing player cash/score between rounds if state exists
-        const existingState = await this.getState(roomId);
+        const existingState = await this.getState(roomCode);
         const existingHands = existingState?.hands ?? {};
 
         const initDeck = shuffleDeck(createDeck());
@@ -114,12 +114,12 @@ class GameCore implements IGameCore {
         }
 
         const newState: GameState = { deck: initDeck, round: 0, hands, totalBetting: 0 };
-        await this.setState(roomId, newState);
+        await this.setState(roomCode, newState);
         return this.cloneRoom(newState);
     }
 
-    async deal(roomId: string, playerId: string, times: number, isFirstDraw = true) {
-        const roomState = await this.getState(roomId);
+    async deal(roomCode: string, playerId: string, times: number, isFirstDraw = true) {
+        const roomState = await this.getState(roomCode);
         if (!roomState) return undefined;
 
         const playerState = roomState.hands[playerId];
@@ -176,7 +176,7 @@ class GameCore implements IGameCore {
             deck: currentDeck,
             round: roomState.round + 1,
         };
-        await this.setState(roomId, nextRoomState);
+        await this.setState(roomCode, nextRoomState);
 
         return {
             playerState: nextRoomState.hands[playerId],
@@ -184,8 +184,8 @@ class GameCore implements IGameCore {
         };
     }
 
-    async bet(roomId: string, playerId: string, betting: number) {
-        const roomState = await this.getState(roomId);
+    async bet(roomCode: string, playerId: string, betting: number) {
+        const roomState = await this.getState(roomCode);
         if (!roomState) return undefined;
 
         const playerState = this.getRequiredPlayer(roomState, playerId);
@@ -201,12 +201,12 @@ class GameCore implements IGameCore {
             },
             totalBetting: roomState.totalBetting + betting,
         };
-        await this.setState(roomId, nextRoomState);
-        return this.getPlayer(roomId, playerId);
+        await this.setState(roomCode, nextRoomState);
+        return this.getPlayer(roomCode, playerId);
     }
 
-    async fold(roomId: string, playerId: string) {
-        const roomState = await this.getState(roomId);
+    async fold(roomCode: string, playerId: string) {
+        const roomState = await this.getState(roomCode);
         if (!roomState) return undefined;
 
         const playerState = this.getRequiredPlayer(roomState, playerId);
@@ -216,12 +216,12 @@ class GameCore implements IGameCore {
             ...roomState,
             hands: { ...roomState.hands, [playerId]: { ...playerState, cards: null } },
         };
-        await this.setState(roomId, nextRoomState);
-        return this.getPlayer(roomId, playerId);
+        await this.setState(roomCode, nextRoomState);
+        return this.getPlayer(roomCode, playerId);
     }
 
-    async setSubmission(roomId: string, playerId: string, result: number) {
-        const roomState = await this.getState(roomId);
+    async setSubmission(roomCode: string, playerId: string, result: number) {
+        const roomState = await this.getState(roomCode);
         if (!roomState) return undefined;
 
         const playerState = this.getRequiredPlayer(roomState, playerId);
@@ -231,12 +231,12 @@ class GameCore implements IGameCore {
             ...roomState,
             hands: { ...roomState.hands, [playerId]: { ...playerState, score: result } },
         };
-        await this.setState(roomId, nextRoomState);
-        return this.getPlayer(roomId, playerId);
+        await this.setState(roomCode, nextRoomState);
+        return this.getPlayer(roomCode, playerId);
     }
 
-    async finalizeRound(roomId: string) {
-        const roomState = await this.getState(roomId);
+    async finalizeRound(roomCode: string) {
+        const roomState = await this.getState(roomCode);
         if (!roomState) return undefined;
 
         const highestScore = { id: '', score: 0 };
@@ -262,8 +262,8 @@ class GameCore implements IGameCore {
         }
 
         const nextRoomState: GameState = { ...roomState, hands: nextHands, totalBetting: 0 };
-        await this.setState(roomId, nextRoomState);
-        return this.getRoom(roomId);
+        await this.setState(roomCode, nextRoomState);
+        return this.getRoom(roomCode);
     }
 }
 

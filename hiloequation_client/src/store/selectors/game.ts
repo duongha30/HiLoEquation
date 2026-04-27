@@ -32,3 +32,8 @@ export const selectGameRound = createAppSelector(
     [(state) => state.gameReducer],
     (game) => game.round,
 );
+
+export const selectIsPlaying = createAppSelector(
+    [(state) => state.gameReducer.isPlaying],
+    (isPlaying) => isPlaying,
+);

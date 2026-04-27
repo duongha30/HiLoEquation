@@ -1,11 +1,45 @@
-export { createRoom, joinRoom } from './actions/room';
+// ------ Actions ------
+export {
+    createRoom,
+    joinRoom
+} from './actions/room';
 export { connectSocketThunk } from './actions/socket';
 
-export { selectSocket, selectIsSocketConnected } from './selectors/socket';
-export { selectUserId, selectUserInfo } from './selectors/user';
-export { selectAllGuess, isHostPlayer, selectRoomCode, selectAllPlayers } from './selectors/room';
-export { selectAllHands, selectMyHand, selectOpponentHands, selectTotalBetting, selectGameStatus, selectGameRound } from './selectors/game';
+// ------ Selectors ------
+export {
+    selectSocket,
+    selectIsSocketConnected
+} from './selectors/socket';
+export {
+    selectUserId,
+    selectUserInfo
+} from './selectors/user';
+export {
+    selectAllGuess,
+    isHostPlayer,
+    selectRoomCode,
+    selectAllPlayers
+} from './selectors/room';
+export {
+    selectAllHands,
+    selectMyHand,
+    selectOpponentHands,
+    selectTotalBetting,
+    selectGameStatus,
+    selectGameRound,
+    selectIsPlaying
+} from './selectors/game';
 
+// ------ Reducers ------
 export { disconnectSocketReducer } from './reducers/socket';
-export { setGameState, updateHand, resetGame } from './reducers/game';
-export { leaveRoom, updatePlayersInRoom, removePlayerFromRoom } from './reducers/room';
+export {
+    setGameState,
+    updateHand,
+    resetGame,
+    setPlayingStatus
+} from './reducers/game';
+export {
+    leaveRoom,
+    updatePlayersInRoom,
+    removePlayerFromRoom
+} from './reducers/room';

@@ -9,6 +9,7 @@ interface RoomState {
     deliveryCount: number;
     activeId: string | null;
     cardTranslates: Record<string, number>;
+    readyPlayers: string[];
 
     setDeckCards: (cards: CardData[] | ((prev: CardData[]) => CardData[])) => void;
     setPlayerCards: (cards: CardData[] | ((prev: CardData[]) => CardData[])) => void;
@@ -16,6 +17,7 @@ interface RoomState {
     setActiveId: (id: string | null) => void;
     setCardTranslates: (translates: Record<string, number>) => void;
     resetDeck: () => void;
+    setPlayerReady: (playerId: string, isReady: boolean) => void;
 }
 
 export const useRoomStore = create<RoomState>((set) => ({
@@ -24,6 +26,7 @@ export const useRoomStore = create<RoomState>((set) => ({
     deliveryCount: 0,
     activeId: null,
     cardTranslates: {},
+    readyPlayers: [],
 
     setDeckCards: (cards) =>
         set((state) => ({ deckCards: typeof cards === 'function' ? cards(state.deckCards) : cards })),
@@ -33,4 +36,10 @@ export const useRoomStore = create<RoomState>((set) => ({
     setActiveId: (id) => set({ activeId: id }),
     setCardTranslates: (translates) => set({ cardTranslates: translates }),
     resetDeck: () => set({ deckCards: shuffleDeck(createDeck()), deliveryCount: 0 }),
+    setPlayerReady: (playerId, isReady) =>
+        set((state) => ({
+            readyPlayers: isReady
+                ? [...new Set([...state.readyPlayers, playerId])]
+                : state.readyPlayers.filter((id) => id !== playerId),
+        })),
 }))

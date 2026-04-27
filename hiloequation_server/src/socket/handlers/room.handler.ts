@@ -1,5 +1,5 @@
 import type { Server, Socket } from 'socket.io';
-import { SUCCESS, ERROR, ON_CREATE_ROOM, ON_JOIN_ROOM, ON_LEAVE_ROOM, EMIT_PLAYER_JOIN, EMIT_PLAYER_LEAVE, SOCKET_ERROR } from '../events';
+import { SUCCESS, ERROR, ON_CREATE_ROOM, ON_JOIN_ROOM, ON_LEAVE_ROOM, ON_PLAYER_READY, EMIT_PLAYER_JOIN, EMIT_PLAYER_LEAVE, EMIT_PLAYER_READY, SOCKET_ERROR } from '../events';
 import { Game } from '../../game';
 import { emitHandler } from '../../utils/socketUtils';
 import RoomService from '../../services/room.service';
@@ -31,6 +31,10 @@ export default (io: Server, socket: Socket) => {
         } catch (error) {
             io.to(roomCode).emit(SOCKET_ERROR, { status: ERROR, message: error });
         }
+    });
+
+    socket.on(ON_PLAYER_READY, ({ roomCode, playerId, isReady }: { roomCode: string; playerId: string; isReady: boolean }) => {
+        io.to(roomCode).emit(EMIT_PLAYER_READY, { status: SUCCESS, playerId, isReady });
     });
 
     socket.on(ON_LEAVE_ROOM, async ({ roomCode, playerId }: { roomCode: string; playerId: string }) => {

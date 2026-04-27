@@ -17,4 +17,6 @@ export const EMIT_PLAYER_JOIN = 'GET_PLAYER_JOIN';
 export const EMIT_PLAYER_LEAVE = 'GET_PLAYER_LEAVE';
 export const EMIT_BETTING = 'GET_BET_COIN';
 export const EMIT_FOLDING = 'GET_FOLD_CARD';
+export const ON_PLAYER_READY = 'PLAYER_READY';
+export const EMIT_PLAYER_READY = 'GET_PLAYER_READY';
 export const SOCKET_ERROR = 'SOCKET_ERROR';

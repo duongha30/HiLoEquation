@@ -10,6 +10,7 @@ export const useConnectSocket = () => {
 
     useEffect(() => {
         const connectSocket = async () => {
+            console.log('connect socket')
             await dispatch(connectSocketThunk());
         }
         connectSocket();
@@ -18,12 +19,10 @@ export const useConnectSocket = () => {
 
 export const useDisconnectSocket = () => {
     const dispatch = useAppDispatch();
-    const playerId = useAppSelector(selectUserId);
-    const roomCode = useAppSelector(selectRoomCode);
 
     useEffect(() => {
         return () => {
-            getSocket()?.emit(EMIT_LEAVE_ROOM, { roomCode, playerId });
+            console.log('first')
             disconnectSocket();
             dispatch(disconnectSocketReducer());
             dispatch(resetGame());

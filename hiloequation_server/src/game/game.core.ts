@@ -1,5 +1,5 @@
 'use strict';
-import { addSymbolIfNotExists, createDeck, drawOnlyNumber, drawCard, shuffleDeck } from './deck.ts';
+import { createDeck, drawOnlyNumber, drawCard, shuffleDeck, encryptCards } from './deck.ts';
 import type {
     CardData,
     GameState,
@@ -118,70 +118,72 @@ class GameCore implements IGameCore {
         return this.cloneRoom(newState);
     }
 
-    async deal(roomCode: string, playerId: string, times: number, isFirstDraw = true) {
+    async deal(roomCode: string, players: string[], times: number, isFirstDraw = false) {
         const roomState = await this.getState(roomCode);
         if (!roomState) return undefined;
-
-        const playerState = roomState.hands[playerId];
-        if (!playerState) return undefined;
-
         if (times <= 0) {
-            return { playerState, round: roomState.round };
+            return this.cloneRoom(roomState);
         }
 
-        const { hands, deck: initialDeck } = roomState;
-        let currentDeck = initialDeck;
-        const hasSymbolCard = playerState.cards?.some(
-            (card) => card.type === 'sqrt' || card.type === 'multiply'
-        );
+        let currentDeck = roomState.deck;
+        const nextHands: HandsType = { ...roomState.hands };
 
-        let drawnCards: CardData[] = [];
-        for (let i = 0; i < times; i++) {
-            const result = (isFirstDraw || hasSymbolCard)
-                ? drawOnlyNumber(currentDeck)
-                : drawCard(currentDeck);
+        for (const playerId of players) {
+            const playerState = nextHands[playerId];
+            if (!playerState) return undefined;
 
-            if (result instanceof Error || !result) continue;
+            const hasSymbolCard = playerState.cards?.some(
+                (card) => card.type === 'sqrt' || card.type === 'multiply'
+            );
 
-            const { card, deck: remainingDeck } = result;
-            currentDeck = remainingDeck;
-            if (card) {
-                if (Array.isArray(card)) {
-                    drawnCards = [...drawnCards, ...card];
-                } else {
-                    drawnCards.push(card);
+            let drawnCards: CardData[] = [];
+            for (let i = 0; i < times; i++) {
+                const result = (isFirstDraw || hasSymbolCard)
+                    ? drawOnlyNumber(currentDeck)
+                    : drawCard(currentDeck);
+
+                if (result instanceof Error || !result) continue;
+
+                const { card, deck: remainingDeck } = result;
+                currentDeck = remainingDeck;
+                if (card) {
+                    if (Array.isArray(card)) {
+                        drawnCards = [...drawnCards, ...card];
+                    } else {
+                        drawnCards.push(card);
+                    }
                 }
             }
+
+            const shouldAddDefaultOps = isFirstDraw && (playerState.cards ?? []).length === 0;
+            const defaultOperationCards = shouldAddDefaultOps
+                ? DEFAULT_OPERATION_CARDS.map((card) => ({ ...card }))
+                : [];
+
+            const markedDrawnCards = isFirstDraw
+                ? encryptCards(drawnCards, playerId)
+                : drawnCards;
+
+            nextHands[playerId] = {
+                cash: playerState.cash,
+                score: playerState.score,
+                bet: playerState.bet,
+                cards: [
+                    ...(playerState.cards ?? []),
+                    ...markedDrawnCards,
+                    ...defaultOperationCards,
+                ],
+            };
         }
-
-        const shouldAddDefaultOps = isFirstDraw && (playerState.cards ?? []).length === 0;
-        const defaultOperationCards = shouldAddDefaultOps
-            ? DEFAULT_OPERATION_CARDS.map((card) => ({ ...card }))
-            : [];
-
-        const updatedPlayer = {
-            cash: playerState.cash,
-            score: playerState.score,
-            bet: playerState.bet,
-            cards: [
-                ...(playerState.cards ?? []),
-                ...drawnCards,
-                ...defaultOperationCards,
-            ],
-        };
 
         const nextRoomState: GameState = {
             ...roomState,
-            hands: { ...hands, [playerId]: updatedPlayer },
+            hands: nextHands,
             deck: currentDeck,
             round: roomState.round + 1,
         };
         await this.setState(roomCode, nextRoomState);
-
-        return {
-            playerState: nextRoomState.hands[playerId],
-            round: roomState.round + 1,
-        };
+        return this.cloneRoom(nextRoomState);
     }
 
     async bet(roomCode: string, playerId: string, betting: number) {

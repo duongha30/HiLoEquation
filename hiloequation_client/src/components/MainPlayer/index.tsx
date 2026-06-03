@@ -58,6 +58,38 @@ export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlaye
 
     return (
         <div ref={ref} className={styles.container}>
+            {isForcedBetPhase && (
+                <div className={styles.overlay}>
+                    <div className={styles.forcedBetModal}>
+                        <h2 className={styles.forcedBetTitle}>First Bet Required</h2>
+                        <p className={styles.forcedBetDesc}>
+                            You must place a bet before the next cards are dealt.
+                            <br />
+                            Minimum: <strong>50 EUR</strong>
+                        </p>
+                        <div className={styles.betControls}>
+                            <button className={styles.btn} onClick={handleDecrease} disabled={betAmount <= minBet}>-</button>
+                            <input
+                                type="number"
+                                className={styles.betInput}
+                                value={betAmount}
+                                min={minBet}
+                                max={cash}
+                                onChange={handleBetInput}
+                            />
+                            <button className={styles.btn} onClick={handleIncrease} disabled={betAmount >= cash}>+</button>
+                        </div>
+                        <button
+                            className={`${styles.btn} ${styles.betBtn}`}
+                            onClick={handleBet}
+                            disabled={betAmount < minBet}
+                        >
+                            Bet
+                        </button>
+                    </div>
+                </div>
+            )}
+
             <div className={styles.cashDisplay}>{cash} EUR</div>
 
             <div className={styles.cardArea}>
@@ -66,28 +98,28 @@ export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlaye
                 ))}
             </div>
 
-            <div className={styles.actions}>
-                {!isForcedBetPhase && (
+            {!isForcedBetPhase && (
+                <div className={styles.actions}>
                     <button className={`${styles.btn} ${styles.foldBtn}`} onClick={handleFold}>
                         Fold
                     </button>
-                )}
-                <div className={styles.betControls}>
-                    <button className={styles.btn} onClick={handleDecrease} disabled={betAmount <= minBet}>-</button>
-                    <input
-                        type="number"
-                        className={styles.betInput}
-                        value={betAmount}
-                        min={minBet}
-                        max={cash}
-                        onChange={handleBetInput}
-                    />
-                    <button className={styles.btn} onClick={handleIncrease} disabled={betAmount >= cash}>+</button>
+                    <div className={styles.betControls}>
+                        <button className={styles.btn} onClick={handleDecrease} disabled={betAmount <= 0}>-</button>
+                        <input
+                            type="number"
+                            className={styles.betInput}
+                            value={betAmount}
+                            min={1}
+                            max={cash}
+                            onChange={handleBetInput}
+                        />
+                        <button className={styles.btn} onClick={handleIncrease} disabled={betAmount >= cash}>+</button>
+                    </div>
+                    <button className={`${styles.btn} ${styles.betBtn}`} onClick={handleBet} disabled={betAmount <= 0}>
+                        Bet
+                    </button>
                 </div>
-                <button className={`${styles.btn} ${styles.betBtn}`} onClick={handleBet} disabled={betAmount < minBet}>
-                    Bet
-                </button>
-            </div>
+            )}
         </div>
     );
 };

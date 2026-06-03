@@ -40,7 +40,7 @@ export function StartReadyButton() {
 
     useEffect(() => {
         if (isPlaying && round === 2 && isHost && allPlayersHaveBet) {
-            getSocket()?.emit(EMIT_DEAL_CARD, { roomCode, players, times: 2, isFirstDraw: false });
+            getSocket()?.emit(EMIT_DEAL_CARD, { roomCode, players, times: 1, isFirstDraw: false });
         }
     }, [round, isPlaying, isHost, allPlayersHaveBet, roomCode, players]);
 

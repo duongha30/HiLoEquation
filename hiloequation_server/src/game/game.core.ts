@@ -4,6 +4,7 @@ import type {
     CardData,
     GameState,
     HandsType,
+    BettingRoundState,
 } from './types.ts';
 import { INIT_CASH, INIT_SCORE, INIT_BETTING, DEFAULT_OPERATION_CARDS } from './constant.ts';
 import redisClient from '../dbs/init.redis';
@@ -53,6 +54,14 @@ class GameCore implements IGameCore {
             round: roomState.round,
             hands: this.cloneHands(roomState.hands),
             totalBetting: roomState.totalBetting,
+            bettingRound: roomState.bettingRound
+                ? {
+                    ...roomState.bettingRound,
+                    activePlayers: [...roomState.bettingRound.activePlayers],
+                    contributions: { ...roomState.bettingRound.contributions },
+                }
+                : null,
+            nextStarterIndex: roomState.nextStarterIndex,
         };
     }
 
@@ -113,7 +122,14 @@ class GameCore implements IGameCore {
             };
         }
 
-        const newState: GameState = { deck: initDeck, round: 0, hands, totalBetting: 0 };
+        const newState: GameState = {
+            deck: initDeck,
+            round: 0,
+            hands,
+            totalBetting: 0,
+            bettingRound: null,
+            nextStarterIndex: existingState?.nextStarterIndex ?? 0,
+        };
         await this.setState(roomCode, newState);
         return this.cloneRoom(newState);
     }
@@ -263,9 +279,101 @@ class GameCore implements IGameCore {
             };
         }
 
-        const nextRoomState: GameState = { ...roomState, hands: nextHands, totalBetting: 0 };
+        const playerCount = Object.keys(nextHands).length;
+        const nextRoomState: GameState = {
+            ...roomState,
+            hands: nextHands,
+            totalBetting: 0,
+            bettingRound: null,
+            nextStarterIndex: playerCount > 0
+                ? (roomState.nextStarterIndex + 1) % playerCount
+                : 0,
+        };
         await this.setState(roomCode, nextRoomState);
         return this.getRoom(roomCode);
+    }
+    async startBettingRound(roomCode: string, players: string[]): Promise<GameState | undefined> {
+        const roomState = await this.getState(roomCode);
+        if (!roomState) return undefined;
+
+        const starterIndex = roomState.nextStarterIndex % players.length;
+        const ordered = [...players.slice(starterIndex), ...players.slice(0, starterIndex)];
+        const activePlayers = ordered.filter((id) => roomState.hands[id]?.cards !== null);
+        if (activePlayers.length < 2) return undefined;
+
+        const contributions: Record<string, number> = {};
+        for (const id of activePlayers) contributions[id] = 0;
+
+        roomState.bettingRound = {
+            active: true,
+            activePlayers,
+            currentTurnPlayerId: activePlayers[0],
+            currentBet: 0,
+            contributions,
+            lastRaiserId: activePlayers[0],
+        };
+
+        await this.setState(roomCode, roomState);
+        return this.cloneRoom(roomState);
+    }
+
+    async processBettingAction(
+        roomCode: string,
+        playerId: string,
+        action: 'bet' | 'check' | 'fold',
+        amount?: number
+    ): Promise<{ state: GameState; roundEnded: boolean } | undefined> {
+        const roomState = await this.getState(roomCode);
+        if (!roomState?.bettingRound?.active) return undefined;
+
+        const br = roomState.bettingRound as BettingRoundState;
+        if (br.currentTurnPlayerId !== playerId) return undefined;
+
+        const player = roomState.hands[playerId];
+        if (!player) return undefined;
+
+        let prevIdx = br.activePlayers.indexOf(playerId);
+
+        if (action === 'bet') {
+            const amt = amount ?? 0;
+            if (amt <= 0 || amt > player.cash) return undefined;
+            const newContrib = br.contributions[playerId] + amt;
+            if (newContrib < br.currentBet) return undefined;
+            player.cash -= amt;
+            br.contributions[playerId] = newContrib;
+            roomState.totalBetting += amt;
+            player.bet += amt;
+            if (newContrib > br.currentBet) {
+                br.currentBet = newContrib;
+                br.lastRaiserId = playerId;
+            }
+        } else if (action === 'check') {
+            if (br.contributions[playerId] < br.currentBet) return undefined;
+        } else if (action === 'fold') {
+            player.cards = null;
+            br.activePlayers = br.activePlayers.filter((id) => id !== playerId);
+        }
+
+        let roundEnded = false;
+
+        if (br.activePlayers.length <= 1) {
+            roundEnded = true;
+            br.active = false;
+        } else {
+            const nextIdx = action === 'fold'
+                ? prevIdx % br.activePlayers.length
+                : (prevIdx + 1) % br.activePlayers.length;
+            const nextPlayer = br.activePlayers[nextIdx];
+            br.currentTurnPlayerId = nextPlayer;
+
+            if (nextPlayer === br.lastRaiserId || !br.activePlayers.includes(br.lastRaiserId)) {
+                roundEnded = true;
+                br.active = false;
+            }
+        }
+
+        await this.setState(roomCode, roomState);
+        return { state: this.cloneRoom(roomState), roundEnded };
     }
 }
 

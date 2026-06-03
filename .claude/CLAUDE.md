@@ -51,11 +51,14 @@ The server requires MongoDB (default `mongodb://localhost:27017`) and Redis (def
 - On round 2+ draws, cards are sent unencrypted. Players who already hold a `sqrt` or `multiply` card always draw only number cards.
 - Client decrypts first-draw cards in `src/utils/card.ts` using the Web Crypto API (`AES-CBC`, same key derivation).
 - After dealing, `GET_CARD_DEAL` is broadcast to the room; client updates the `game` Redux slice.
+- **Multi-deal flow**: (1) `START_GAME` → server init, (2) client auto-emits `DEAL_CARD { isFirstDraw: true }` → round becomes 1, (3) `StartReadyButton` detects `round === 1` and immediately emits `DEAL_CARD { times: 1, isFirstDraw: false }` → round becomes 2, (4) once all players have placed their forced bet, host emits `DEAL_CARD { times: 2, isFirstDraw: false }` → players each draw 2 more cards.
 
 **Betting and folding**
 - `MainPlayer` component has a bet input (increment/decrement by 10, or free-type) capped to the player's cash, and a Fold button.
 - Emits `BET_COIN { roomCode, playerId, betting }` → server validates ownership and amount, updates Redis, broadcasts `GET_BET_COIN`.
 - Emits `FOLD_CARD { roomCode, playerId }` → server nulls out player's cards in Redis, broadcasts `GET_FOLD_CARD`.
+- Both `GET_BET_COIN` (`ON_BETTING`) and `GET_FOLD_CARD` (`ON_FOLDING`) are now wired in `useRoomSubscription`.
+- **Forced first-bet phase** (round === 2): minimum bet is 50 EUR (`MIN_FORCED_BET`), the Fold button is hidden, and all bet controls enforce the 50 EUR floor. Phase ends once the player's `bet` field in Redux is non-zero.
 - Server-side handler verifies `socket.data.playerId === playerId` before processing bets/folds.
 
 **Game finalization**
@@ -64,16 +67,36 @@ The server requires MongoDB (default `mongodb://localhost:27017`) and Redis (def
 
 **Room UI (in-game)**
 - Room screen renders `MainPlayer` (local player, droppable zone) plus up to 3 `Player` components for opponents at left / top / right positions.
-- Card drag-and-drop within the player's hand via `@dnd-kit/react`; position offsets tracked in Zustand (`cardTranslates`).
+- Opponent `Player` components rotate their card group based on table position: left = `rotate(90deg)`, top = `rotate(180deg)`, right = `rotate(-90deg)`. Cards stack 50% on top of each other via negative `margin-left` on sibling wrappers (operates in local coordinate space after rotation).
+- All opponent cards are visible; encrypted cards (those with an `encryptedData` field) render face-down. `faceDown` is never set by the server; the client detects it via `!!c.encryptedData`. Encrypted opponent cards have no `id` field — normalized with `` id ?? `face-down-${i}` `` in the Player component.
+- Card drag-and-drop within the player's own hand via `@dnd-kit/react`; position offsets tracked in Zustand (`cardTranslates`).
+- `BettingDisplay` component in the deck section shows each player's current bet amount (from Redux `hands`) in real time. Visible once `isPlaying && round >= 1`.
 - `Deck` component currently renders a static decorative stack of the default operation cards, not the live deck count.
 
 ### Not yet implemented / known gaps
 
-- No `GET_BET_COIN`, `GET_FOLD_CARD`, or `GET_PLAYER_LEAVE` listeners in `useRoomSubscription` — server broadcasts are ignored by the client.
-- No game result screen or UI for submitting the player's equation result (`FINISH_GAME`).
+- No `GET_PLAYER_LEAVE` listener in `useRoomSubscription` — server broadcasts `GET_PLAYER_LEAVE` but the client ignores it.
+- No game result screen or UI for submitting the player's equation result (`FINISH_GAME`). `GET_GAME_RESULT` is not subscribed in `useRoomSubscription`.
 - Socket auth middleware is commented out — sockets are unauthenticated.
 - Background music player is commented out in `App.tsx`.
 - A debug "test Join Room" button is present on the Home screen.
+- `Deck` component shows a static decorative stack, not the live remaining deck count.
+
+## Recent Changes
+
+> Replace this section (don't append) each time significant features land. Older history lives in `git log`.
+
+### feat/handle-deal-card (current branch)
+- **Opponent card stacking**: `Player` component now reads opponent hands from Redux and renders all cards stacked 50% with position-based rotation (left/top/right). Encrypted cards show face-down via `!!c.encryptedData`.
+- **Forced first-bet phase**: In round 2, `MainPlayer` enforces a minimum 50 EUR bet and hides the Fold button until the player has bet. Controlled by `isForcedBetPhase = isPlaying && round === 2 && bet === 0`.
+- **BettingDisplay**: New `src/screens/Room/components/BettingDisplay/` component shows each player's current bet live. Rendered in the deck section of Room.
+- **Automatic second deal**: `StartReadyButton` has two effects — one fires `DEAL_CARD { times: 1 }` when `round === 1`; a second fires `DEAL_CARD { times: 2 }` when `round === 2 && isHost && allPlayersHaveBet`.
+- **Wired listeners**: `GET_BET_COIN` (`ON_BETTING`) and `GET_FOLD_CARD` (`ON_FOLDING`) are now registered in `useRoomSubscription`.
+
+### sc/deal-card-1
+- `GameCore.deal()` multi-player support; AES-256-CBC encryption of number cards on first draw.
+- Client-side decryption in `src/utils/card.ts` (Web Crypto API).
+- `START_GAME` → `DEAL_CARD { isFirstDraw: true }` auto-emit flow wired end-to-end.
 
 ## Architecture
 

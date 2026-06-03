@@ -50,7 +50,6 @@ export const useRoomSubscription = () => {
         };
 
         const onDealCard = async (data: any) => {
-            console.log('onDealCard data', data)
             if (data.status !== 200 || !data.roomState) return;
             const myHand = data.roomState.hands[playerId];
             const myCards = myHand?.cards || [];

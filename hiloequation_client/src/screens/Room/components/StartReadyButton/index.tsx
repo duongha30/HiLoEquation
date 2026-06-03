@@ -5,7 +5,8 @@ import {
     selectRoomCode,
     selectAllPlayers,
     selectIsPlaying,
-    selectGameRound
+    selectGameRound,
+    selectAllHands,
 } from '@/store';
 import { useAppSelector } from '@/store/hooks';
 import { selectUserId } from '@/store/selectors/user';
@@ -24,15 +25,24 @@ export function StartReadyButton() {
     const { readyPlayers, setPlayerReady } = useRoomStore();
 
     const round = useAppSelector(selectGameRound);
+    const allHands = useAppSelector(selectAllHands);
 
     const isReady = readyPlayers.includes(userId ?? '');
     const allGuestsReady = guess.length > 0 && guess.every((id) => readyPlayers.includes(id));
+    const allPlayersHaveBet =
+        players.length > 0 && players.every((id) => (allHands[id]?.bet ?? 0) > 0);
 
     useEffect(() => {
         if (isPlaying && round === 1) {
             getSocket()?.emit(EMIT_DEAL_CARD, { roomCode, players, times: 1, isFirstDraw: false });
         }
     }, [round, isPlaying, roomCode, players]);
+
+    useEffect(() => {
+        if (isPlaying && round === 2 && isHost && allPlayersHaveBet) {
+            getSocket()?.emit(EMIT_DEAL_CARD, { roomCode, players, times: 2, isFirstDraw: false });
+        }
+    }, [round, isPlaying, isHost, allPlayersHaveBet, roomCode, players]);
 
     const handleStartGame = () => {
         getSocket()?.emit(EMIT_START_GAME, { roomCode, playerIds: players });

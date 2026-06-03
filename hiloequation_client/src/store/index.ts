@@ -27,7 +27,11 @@ export {
     selectTotalBetting,
     selectGameStatus,
     selectGameRound,
-    selectIsPlaying
+    selectIsPlaying,
+    selectBettingRound,
+    selectCurrentTurnPlayerId,
+    selectIsMyTurn,
+    selectCurrentBet,
 } from './selectors/game';
 
 // ------ Reducers ------

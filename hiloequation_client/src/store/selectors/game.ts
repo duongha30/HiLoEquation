@@ -1,4 +1,5 @@
 import { createAppSelector } from '../hooks';
+import type { BettingRoundState } from '../reducers/game';
 
 export const selectAllHands = createAppSelector(
     [(state) => state.gameReducer.hands],
@@ -36,4 +37,24 @@ export const selectGameRound = createAppSelector(
 export const selectIsPlaying = createAppSelector(
     [(state) => state.gameReducer.isPlaying],
     (isPlaying) => isPlaying,
+);
+
+export const selectBettingRound = createAppSelector(
+    [(state) => state.gameReducer.bettingRound],
+    (br): BettingRoundState | null => br ?? null,
+);
+
+export const selectCurrentTurnPlayerId = createAppSelector(
+    [(state) => state.gameReducer.bettingRound],
+    (br) => (br?.active ? br.currentTurnPlayerId : null),
+);
+
+export const selectIsMyTurn = createAppSelector(
+    [(state) => state.gameReducer.bettingRound, (state) => state.userReducer.userId],
+    (br, userId) => br?.active === true && br.currentTurnPlayerId === userId,
+);
+
+export const selectCurrentBet = createAppSelector(
+    [(state) => state.gameReducer.bettingRound],
+    (br) => br?.currentBet ?? 0,
 );

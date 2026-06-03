@@ -16,3 +16,8 @@
 .rotateLeft  { transform: rotate(90deg); }
 .rotateTop   { transform: rotate(180deg); }
 .rotateRight { transform: rotate(-90deg); }
+
+.activeTurn {
+    outline: 2px solid #c9a84c;
+    border-radius: 0.5rem;
+}

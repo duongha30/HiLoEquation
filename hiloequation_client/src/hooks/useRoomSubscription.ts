@@ -3,7 +3,7 @@ import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { updatePlayersInRoom } from "@/store/reducers/room";
 import { updateHand } from "@/store/reducers/game";
 import type { HandSnapshot } from "@/store/reducers/game";
-import { EMIT_DEAL_CARD, ON_BETTING, ON_CARD_DEAL, ON_FOLDING, ON_PLAYER_JOIN, ON_PLAYER_READY, ON_START } from "@/store/socket/events";
+import { EMIT_DEAL_CARD, ON_BETTING, ON_CARD_DEAL, ON_FOLDING, ON_PLAYER_JOIN, ON_PLAYER_READY, ON_START, ON_PLAYER_ACTION, ON_BETTING_ROUND_END } from "@/store/socket/events";
 import { getSocket } from "@/store/socket/socket";
 import { useRoomStore } from "@/screens/Room/roomStore";
 import type { ServerRoomState } from '@/store/reducers/game';
@@ -77,12 +77,24 @@ export const useRoomSubscription = () => {
             dispatch(updateHand({ playerId: data.playerId, hand: { cards: null } }));
         };
 
+        const onPlayerAction = (data: any) => {
+            if (data.status !== 200 || !data.roomState) return;
+            dispatch(setGameState(data.roomState));
+        };
+
+        const onBettingRoundEnd = (data: any) => {
+            if (data.status !== 200 || !data.roomState) return;
+            dispatch(setGameState(data.roomState));
+        };
+
         socket.on(ON_PLAYER_JOIN, onPlayerJoin);
         socket.on(ON_PLAYER_READY, onPlayerReady);
         socket.on(ON_START, onStartGame);
         socket.on(ON_CARD_DEAL, onDealCard);
         socket.on(ON_BETTING, onBetCoin);
         socket.on(ON_FOLDING, onFoldCard);
+        socket.on(ON_PLAYER_ACTION, onPlayerAction);
+        socket.on(ON_BETTING_ROUND_END, onBettingRoundEnd);
 
         return () => {
             socket.off(ON_PLAYER_JOIN, onPlayerJoin);
@@ -91,6 +103,8 @@ export const useRoomSubscription = () => {
             socket.off(ON_CARD_DEAL, onDealCard);
             socket.off(ON_BETTING, onBetCoin);
             socket.off(ON_FOLDING, onFoldCard);
+            socket.off(ON_PLAYER_ACTION, onPlayerAction);
+            socket.off(ON_BETTING_ROUND_END, onBettingRoundEnd);
         };
     }, [isConnected, setPlayerReady, dispatch]);
 };

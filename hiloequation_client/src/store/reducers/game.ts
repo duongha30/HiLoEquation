@@ -9,15 +9,26 @@ export type HandSnapshot = {
     cards: CardData[] | null;
 };
 
+export type BettingRoundState = {
+    active: boolean;
+    activePlayers: string[];
+    currentTurnPlayerId: string;
+    currentBet: number;
+    contributions: Record<string, number>;
+    lastRaiserId: string;
+};
+
 export type ServerRoomState = {
     round: number;
     totalBetting: number;
     hands: Record<string, HandSnapshot>;
+    bettingRound?: BettingRoundState | null;
 };
 
 export type GameState = ServerRoomState & {
     status: 'idle' | 'loading' | 'failed';
     isPlaying: boolean;
+    bettingRound: BettingRoundState | null;
 };
 
 const initialState: GameState = {
@@ -26,6 +37,7 @@ const initialState: GameState = {
     hands: {},
     isPlaying: false,
     status: 'idle',
+    bettingRound: null,
 };
 
 const gameSlice = createSlice({
@@ -36,6 +48,7 @@ const gameSlice = createSlice({
             state.round = action.payload.round;
             state.totalBetting = action.payload.totalBetting;
             state.hands = action.payload.hands;
+            state.bettingRound = action.payload.bettingRound ?? null;
         },
         updateHand: (state, action: PayloadAction<{ playerId: string; hand: Partial<HandSnapshot>; totalBetting?: number }>) => {
             const { playerId, hand, totalBetting } = action.payload;

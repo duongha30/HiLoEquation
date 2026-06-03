@@ -7,8 +7,8 @@ import { useAppSelector } from '@/store/hooks';
 import { selectUserId } from '@/store/selectors/user';
 import { selectRoomCode } from '@/store/selectors/room';
 import { getSocket } from '@/store/socket/socket';
-import { EMIT_BET_COIN, EMIT_FOLD_CARD } from '@/store/socket/events';
-import { selectMyHand, selectGameRound, selectIsPlaying } from '@/store';
+import { EMIT_BET_COIN, EMIT_FOLD_CARD, EMIT_PLAYER_ACTION } from '@/store/socket/events';
+import { selectMyHand, selectGameRound, selectIsPlaying, selectBettingRound, selectCurrentBet, selectIsMyTurn } from '@/store';
 
 const BET_STEP = 10;
 const MIN_FORCED_BET = 50;
@@ -30,8 +30,16 @@ export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlaye
     const isPlaying = useAppSelector(selectIsPlaying);
     const cash = useMemo(() => myHand?.cash ?? 0, [myHand?.cash]);
 
+    const bettingRound = useAppSelector(selectBettingRound);
+    const currentBet = useAppSelector(selectCurrentBet);
+    const isMyTurn = useAppSelector(selectIsMyTurn);
+
     const isForcedBetPhase = isPlaying && round === 2 && (myHand?.bet ?? 0) === 0;
     const minBet = isForcedBetPhase ? MIN_FORCED_BET : 1;
+
+    const myContribution = bettingRound?.contributions[playerId ?? ''] ?? 0;
+    const callAmount = Math.max(0, currentBet - myContribution);
+    const canCheck = isMyTurn && callAmount === 0;
 
     const handleIncrease = () => {
         setBetAmount((prev) => Math.min(prev + BET_STEP, cash));
@@ -54,6 +62,20 @@ export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlaye
 
     const handleFold = () => {
         getSocket()?.emit(EMIT_FOLD_CARD, { roomCode, playerId });
+    };
+
+    const handleCheck = () => {
+        getSocket()?.emit(EMIT_PLAYER_ACTION, { roomCode, playerId, action: 'check' });
+    };
+
+    const handleRoundBet = () => {
+        if (betAmount < callAmount || betAmount > cash) return;
+        getSocket()?.emit(EMIT_PLAYER_ACTION, { roomCode, playerId, action: 'bet', amount: betAmount });
+        setBetAmount(0);
+    };
+
+    const handleRoundFold = () => {
+        getSocket()?.emit(EMIT_PLAYER_ACTION, { roomCode, playerId, action: 'fold' });
     };
 
     return (
@@ -98,7 +120,7 @@ export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlaye
                 ))}
             </div>
 
-            {!isForcedBetPhase && (
+            {!isForcedBetPhase && !isMyTurn && (
                 <div className={styles.actions}>
                     <button className={`${styles.btn} ${styles.foldBtn}`} onClick={handleFold}>
                         Fold
@@ -118,6 +140,35 @@ export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlaye
                     <button className={`${styles.btn} ${styles.betBtn}`} onClick={handleBet} disabled={betAmount <= 0}>
                         Bet
                     </button>
+                </div>
+            )}
+
+            {isMyTurn && (
+                <div className={styles.bettingRoundPanel}>
+                    <span className={styles.bettingRoundLabel}>
+                        {canCheck ? 'Your turn — Check, Bet, or Fold' : `Your turn — Call ${callAmount} EUR, Raise, or Fold`}
+                    </span>
+                    <div className={styles.actions}>
+                        {canCheck && (
+                            <button className={styles.btn} onClick={handleCheck}>Check</button>
+                        )}
+                        <div className={styles.betControls}>
+                            <button className={styles.btn} onClick={handleDecrease} disabled={betAmount <= Math.max(callAmount, 1)}>-</button>
+                            <input
+                                type="number"
+                                className={styles.betInput}
+                                value={betAmount}
+                                min={callAmount}
+                                max={cash}
+                                onChange={handleBetInput}
+                            />
+                            <button className={styles.btn} onClick={handleIncrease} disabled={betAmount >= cash}>+</button>
+                        </div>
+                        <button className={`${styles.btn} ${styles.betBtn}`} onClick={handleRoundBet} disabled={betAmount < callAmount}>
+                            {callAmount > 0 && betAmount === callAmount ? `Call ${callAmount}` : 'Bet'}
+                        </button>
+                        <button className={`${styles.btn} ${styles.foldBtn}`} onClick={handleRoundFold}>Fold</button>
+                    </div>
                 </div>
             )}
         </div>

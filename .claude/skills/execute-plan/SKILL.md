@@ -35,7 +35,7 @@ For each task in order:
 3. After any code change to the server, run `npm run typecheck` from `hiloequation_server/`
 4. After any code change to the client, run `npm run lint` from `hiloequation_client/`
 5. If a step adds or renames a socket event, verify the event name exists in **both** `events.ts` files before moving on
-6. Commit at the commit step — use the message from the plan
+6. **After each task passes verification, commit all changes from that task before starting the next one.** The commit message must explicitly describe what the task did (e.g. `feat: add faceDown field to CardData on server and client`). Never bundle multiple tasks into one commit.
 7. Mark task `completed`
 
 ### Step 4: Final Verification

@@ -135,6 +135,15 @@ Fix issues inline. No need to re-review — just fix and move on.
 
 ---
 
+## Save the Plan
+
+After the self-review passes, write the plan to disk using the `Write` tool:
+
+- Path: `.claude/plans/<YYYY-MM-DD-feature-name>.md`
+- Do not ask for confirmation — just write it.
+
+---
+
 ## Execution Handoff
 
 After saving the plan:

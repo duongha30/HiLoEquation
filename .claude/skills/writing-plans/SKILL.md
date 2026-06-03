@@ -137,16 +137,46 @@ Fix issues inline. No need to re-review — just fix and move on.
 
 ## Save the Plan
 
-After the self-review passes, write the plan to disk using the `Write` tool:
+The plan must always end up at:
+```
+/Users/duongha/Documents/HiLoEquation/.claude/plans/YYYY-MM-DD-feature-name.md
+```
 
-- Path: `/Users/duongha/Documents/HiLoEquation/.claude/plans/YYYY-MM-DD-feature-name.md`
-- Each plan is its own file — never overwrite an existing plan file. If a file with that name already exists, append a suffix (e.g. `-v2`, `-2`) to make the filename unique.
-- Do not ask for confirmation — just write it.
+**How to save depends on whether plan mode is active:**
+
+### Outside plan mode (skill invoked directly)
+After self-review passes, save immediately:
+
+1. Run via Bash tool (substitute the real date and feature name):
+   ```bash
+   touch /Users/duongha/Documents/HiLoEquation/.claude/plans/YYYY-MM-DD-feature-name.md
+   ```
+   If that file already exists, append a suffix (e.g. `-v2`) before touching.
+2. Write the plan content into that file using the `Write` tool.
+3. Do not ask for confirmation — just create and write it.
+
+### Inside plan mode (FleetView controls the file location)
+FleetView forces the plan into its own storage (`/Users/duongha/.claude/plans/<auto-name>.md`) during planning — you cannot write to the project path in this mode.
+
+Instead, **make the very first task in the plan** be saving itself to the project directory:
+
+```markdown
+## Task 0: Save this plan to the project plans directory
+
+- [ ] **Step 1: Touch the plan file**
+  ```bash
+  touch /Users/duongha/Documents/HiLoEquation/.claude/plans/YYYY-MM-DD-feature-name.md
+  ```
+- [ ] **Step 2: Write the plan content**
+  Use the `Write` tool to write the full plan content to that path.
+```
+
+This ensures the plan is always persisted at the correct project path as the first thing execution does.
 
 ---
 
 ## Execution Handoff
 
-After saving the plan:
+After saving the plan (or after writing Task 0 in plan mode):
 
 > "Plan saved to `/Users/duongha/Documents/HiLoEquation/.claude/plans/<filename>.md`. Ready to execute task-by-task in this session — want me to start with Task 1?"

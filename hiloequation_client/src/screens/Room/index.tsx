@@ -7,7 +7,7 @@ import { useDrapDrop } from './hooks/useDragDrop';
 import { useRoomStore } from './roomStore';
 import { useAppSelector } from '@/store/hooks';
 import { selectAllGuess, selectMyHand } from '@/store';
-import { StartReadyButton } from './components/';
+import { StartReadyButton, BettingDisplay } from './components/';
 
 export const Room = () => {
   const cardRefs = useRef<Map<string, HTMLElement>>(new Map());
@@ -46,6 +46,7 @@ export const Room = () => {
       <div className={styles.container}>
         <div className={styles.deckSection}>
           <StartReadyButton />
+          <BettingDisplay />
           <Deck />
         </div>
         <MainPlayer

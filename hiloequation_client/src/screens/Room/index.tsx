@@ -29,10 +29,11 @@ export const Room = () => {
   useEffect(() => { playerCardsRef.current = playerCards; }, [playerCards]);
 
   const PLAYER_POSITION_STYLES = [styles.playerLeft, styles.playerTop, styles.playerRight];
+  const PLAYER_POSITIONS: Array<'left' | 'top' | 'right'> = ['left', 'top', 'right'];
 
   const renderPlayer = () => {
     return guess.map((p, i) => (
-      <Player key={p} id={p} additionalStyle={PLAYER_POSITION_STYLES[i % 3]} />
+      <Player key={p} id={p} position={PLAYER_POSITIONS[i % 3]} additionalStyle={PLAYER_POSITION_STYLES[i % 3]} />
     ));
   };
 

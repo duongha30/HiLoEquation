@@ -5,19 +5,30 @@ import { selectAllHands } from '@/store';
 
 type PlayerProps = {
     id: string;
+    position: 'left' | 'top' | 'right';
     additionalStyle?: string;
 };
 
-export const Player = ({ id, additionalStyle }: PlayerProps) => {
+const ROTATION = {
+    left: styles.rotateLeft,
+    top: styles.rotateTop,
+    right: styles.rotateRight,
+};
+
+export const Player = ({ id, position, additionalStyle }: PlayerProps) => {
     const hand = useAppSelector(selectAllHands)[id];
-    const visibleCards = hand?.cards?.filter(c => !c.faceDown) ?? [];
+    const allCards = hand?.cards ?? [];
+    const normalizedCards = allCards.map((c, i) => ({ ...c, id: c.id ?? `face-down-${i}` }));
 
     return (
-        <div className={`${styles.container} ${additionalStyle}`}>
-            <div>{id}</div>
-            {visibleCards.map(c => (
-                <Card key={c.id} card={c} faceDown droppable={false} />
-            ))}
+        <div className={`${styles.container} ${additionalStyle ?? ''}`}>
+            <div className={`${styles.cardsGroup} ${ROTATION[position]}`}>
+                {normalizedCards.map(c => (
+                    <div key={c.id} className={styles.cardWrapper}>
+                        <Card card={c} faceDown={!!c.encryptedData} droppable={false} />
+                    </div>
+                ))}
+            </div>
         </div>
     );
 };

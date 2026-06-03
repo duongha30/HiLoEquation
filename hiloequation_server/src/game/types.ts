@@ -11,6 +11,7 @@ type CardData = {
     value?: number;
     operation?: OperationSymbol;
     encryptedData?: string;
+    faceDown?: boolean;
 };
 
 // Game Core

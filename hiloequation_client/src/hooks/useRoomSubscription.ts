@@ -1,7 +1,9 @@
 import { selectAllPlayers, selectIsSocketConnected, selectRoomCode, selectUserId, setGameState, setPlayingStatus } from "@/store";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { updatePlayersInRoom } from "@/store/reducers/room";
-import { EMIT_DEAL_CARD, ON_CARD_DEAL, ON_PLAYER_JOIN, ON_PLAYER_READY, ON_START } from "@/store/socket/events";
+import { updateHand } from "@/store/reducers/game";
+import type { HandSnapshot } from "@/store/reducers/game";
+import { EMIT_DEAL_CARD, ON_BETTING, ON_CARD_DEAL, ON_FOLDING, ON_PLAYER_JOIN, ON_PLAYER_READY, ON_START } from "@/store/socket/events";
 import { getSocket } from "@/store/socket/socket";
 import { useRoomStore } from "@/screens/Room/roomStore";
 import type { ServerRoomState } from '@/store/reducers/game';
@@ -66,16 +68,30 @@ export const useRoomSubscription = () => {
             dispatch(setGameState(roomState));
         }
 
+        const onBetCoin = (data: { status: number; playerId: string; playerState: HandSnapshot }) => {
+            if (data.status !== 200) return;
+            dispatch(updateHand({ playerId: data.playerId, hand: { cash: data.playerState.cash, bet: data.playerState.bet } }));
+        };
+
+        const onFoldCard = (data: { status: number; playerId: string; playerState: HandSnapshot }) => {
+            if (data.status !== 200) return;
+            dispatch(updateHand({ playerId: data.playerId, hand: { cards: null } }));
+        };
+
         socket.on(ON_PLAYER_JOIN, onPlayerJoin);
         socket.on(ON_PLAYER_READY, onPlayerReady);
         socket.on(ON_START, onStartGame);
         socket.on(ON_CARD_DEAL, onDealCard);
+        socket.on(ON_BETTING, onBetCoin);
+        socket.on(ON_FOLDING, onFoldCard);
 
         return () => {
             socket.off(ON_PLAYER_JOIN, onPlayerJoin);
             socket.off(ON_PLAYER_READY, onPlayerReady);
             socket.off(ON_START, onStartGame);
             socket.off(ON_CARD_DEAL, onDealCard);
+            socket.off(ON_BETTING, onBetCoin);
+            socket.off(ON_FOLDING, onFoldCard);
         };
     }, [isConnected, setPlayerReady, dispatch]);
 };

@@ -56,7 +56,7 @@ export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlaye
 
             <div className={styles.cardArea}>
                 {cards.map((card) => (
-                    <Card key={card.id} card={card} droppable onMount={onCardMount} translateX={cardTranslates?.[card.id]} />
+                    <Card key={card.id} card={card} faceDown={card.faceDown ?? false} droppable draggable onMount={onCardMount} translateX={cardTranslates?.[card.id]} />
                 ))}
             </div>
 

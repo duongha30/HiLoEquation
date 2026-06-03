@@ -1,0 +1,25 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+    color: #fff;
+}
+
+.row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.playerId {
+    opacity: 0.7;
+}
+
+.betAmount {
+    font-weight: 700;
+    color: #ffd54f;
+}

@@ -4,13 +4,15 @@ import {
     selectAllGuess,
     selectRoomCode,
     selectAllPlayers,
-    selectIsPlaying
+    selectIsPlaying,
+    selectGameRound
 } from '@/store';
 import { useAppSelector } from '@/store/hooks';
 import { selectUserId } from '@/store/selectors/user';
 import { useRoomStore } from '../../roomStore';
 import { getSocket } from '@/store/socket/socket';
-import { EMIT_START_GAME, EMIT_PLAYER_READY } from '@/store/socket/events';
+import { EMIT_START_GAME, EMIT_PLAYER_READY, EMIT_DEAL_CARD } from '@/store/socket/events';
+import { useEffect } from 'react';
 
 export function StartReadyButton() {
     const isHost = useAppSelector(isHostPlayer);
@@ -21,8 +23,16 @@ export function StartReadyButton() {
     const isPlaying = useAppSelector(selectIsPlaying);
     const { readyPlayers, setPlayerReady } = useRoomStore();
 
+    const round = useAppSelector(selectGameRound);
+
     const isReady = readyPlayers.includes(userId ?? '');
     const allGuestsReady = guess.length > 0 && guess.every((id) => readyPlayers.includes(id));
+
+    useEffect(() => {
+        if (isPlaying && round === 1) {
+            getSocket()?.emit(EMIT_DEAL_CARD, { roomCode, players, times: 1, isFirstDraw: false });
+        }
+    }, [round, isPlaying, roomCode, players]);
 
     const handleStartGame = () => {
         getSocket()?.emit(EMIT_START_GAME, { roomCode, playerIds: players });

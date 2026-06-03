@@ -1,0 +1,26 @@
+import styles from './BettingDisplay.module.css';
+import { useAppSelector } from '@/store/hooks';
+import { selectAllHands, selectAllPlayers, selectIsPlaying, selectGameRound } from '@/store';
+
+export const BettingDisplay = () => {
+    const isPlaying = useAppSelector(selectIsPlaying);
+    const round = useAppSelector(selectGameRound);
+    const players = useAppSelector(selectAllPlayers);
+    const allHands = useAppSelector(selectAllHands);
+
+    if (!isPlaying || round < 1) return null;
+
+    return (
+        <div className={styles.container}>
+            {players.map((id) => {
+                const bet = allHands[id]?.bet ?? 0;
+                return (
+                    <div key={id} className={styles.row}>
+                        <span className={styles.playerId}>{id.slice(0, 8)}</span>
+                        <span className={styles.betAmount}>{bet} EUR</span>
+                    </div>
+                );
+            })}
+        </div>
+    );
+};

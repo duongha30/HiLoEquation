@@ -39,21 +39,21 @@
 /* Guest player position slots */
 .playerLeft {
   position: absolute;
-  left: 2rem;
+  left: 0px;
   top: 50%;
-  transform: translateY(-50%);
+  transform: translate(-35%, -50%);
 }
 
 .playerTop {
   position: absolute;
-  top: 2rem;
+  top: -150px;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%, -35%);
 }
 
 .playerRight {
   position: absolute;
-  right: 2rem;
+  right: -150px;
   top: 50%;
-  transform: translateY(-50%);
+  transform: translate(-35%, -50%);
 }

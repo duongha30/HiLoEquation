@@ -7,7 +7,7 @@ import { useDrapDrop } from './hooks/useDragDrop';
 import { useRoomStore } from './roomStore';
 import { useAppSelector } from '@/store/hooks';
 import { selectAllGuess, selectMyHand } from '@/store';
-import { StartReadyButton } from './components/';
+import { StartReadyButton, BettingDisplay } from './components/';
 
 export const Room = () => {
   const cardRefs = useRef<Map<string, HTMLElement>>(new Map());
@@ -29,10 +29,11 @@ export const Room = () => {
   useEffect(() => { playerCardsRef.current = playerCards; }, [playerCards]);
 
   const PLAYER_POSITION_STYLES = [styles.playerLeft, styles.playerTop, styles.playerRight];
+  const PLAYER_POSITIONS: Array<'left' | 'top' | 'right'> = ['left', 'top', 'right'];
 
   const renderPlayer = () => {
     return guess.map((p, i) => (
-      <Player key={p} id={p} additionalStyle={PLAYER_POSITION_STYLES[i % 3]} />
+      <Player key={p} id={p} position={PLAYER_POSITIONS[i % 3]} additionalStyle={PLAYER_POSITION_STYLES[i % 3]} />
     ));
   };
 
@@ -45,6 +46,7 @@ export const Room = () => {
       <div className={styles.container}>
         <div className={styles.deckSection}>
           <StartReadyButton />
+          <BettingDisplay />
           <Deck />
         </div>
         <MainPlayer

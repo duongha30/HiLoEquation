@@ -1,6 +1,6 @@
 ---
 name: writing-plans
-description: Use when you have a spec or requirements for a multi-step task, before touching code. Produces a step-by-step implementation plan saved to .claude/plans/.
+description: Use when you have a spec or requirements for a multi-step task, before touching code. Produces a step-by-step implementation plan saved to /Users/duongha/Documents/HiLoEquation/.claude/plans/.
 ---
 
 # Writing Plans
@@ -11,7 +11,7 @@ Write a comprehensive implementation plan that an engineer can follow task-by-ta
 
 Announce at start: "I'm using the writing-plans skill to create the implementation plan."
 
-Save plans to: `.claude/plans/YYYY-MM-DD-<feature-name>.md`
+Save plans to: `/Users/duongha/Documents/HiLoEquation/.claude/plans/YYYY-MM-DD-<feature-name>.md`
 
 ---
 
@@ -139,7 +139,8 @@ Fix issues inline. No need to re-review — just fix and move on.
 
 After the self-review passes, write the plan to disk using the `Write` tool:
 
-- Path: `.claude/plans/<YYYY-MM-DD-feature-name>.md`
+- Path: `/Users/duongha/Documents/HiLoEquation/.claude/plans/YYYY-MM-DD-feature-name.md`
+- Each plan is its own file — never overwrite an existing plan file. If a file with that name already exists, append a suffix (e.g. `-v2`, `-2`) to make the filename unique.
 - Do not ask for confirmation — just write it.
 
 ---
@@ -148,4 +149,4 @@ After the self-review passes, write the plan to disk using the `Write` tool:
 
 After saving the plan:
 
-> "Plan saved to `.claude/plans/<filename>.md`. Ready to execute task-by-task in this session — want me to start with Task 1?"
+> "Plan saved to `/Users/duongha/Documents/HiLoEquation/.claude/plans/<filename>.md`. Ready to execute task-by-task in this session — want me to start with Task 1?"

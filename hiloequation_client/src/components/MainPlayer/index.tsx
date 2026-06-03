@@ -8,9 +8,10 @@ import { selectUserId } from '@/store/selectors/user';
 import { selectRoomCode } from '@/store/selectors/room';
 import { getSocket } from '@/store/socket/socket';
 import { EMIT_BET_COIN, EMIT_FOLD_CARD } from '@/store/socket/events';
-import { selectMyHand } from '@/store';
+import { selectMyHand, selectGameRound, selectIsPlaying } from '@/store';
 
 const BET_STEP = 10;
+const MIN_FORCED_BET = 50;
 
 type MainPlayerProps = {
     id: string;
@@ -25,23 +26,28 @@ export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlaye
     const playerId = useAppSelector(selectUserId);
     const roomCode = useAppSelector(selectRoomCode);
     const myHand = useAppSelector(selectMyHand);
+    const round = useAppSelector(selectGameRound);
+    const isPlaying = useAppSelector(selectIsPlaying);
     const cash = useMemo(() => myHand?.cash ?? 0, [myHand?.cash]);
+
+    const isForcedBetPhase = isPlaying && round === 2 && (myHand?.bet ?? 0) === 0;
+    const minBet = isForcedBetPhase ? MIN_FORCED_BET : 1;
 
     const handleIncrease = () => {
         setBetAmount((prev) => Math.min(prev + BET_STEP, cash));
     };
 
     const handleDecrease = () => {
-        setBetAmount((prev) => Math.max(prev - BET_STEP, 0));
+        setBetAmount((prev) => Math.max(prev - BET_STEP, isForcedBetPhase ? MIN_FORCED_BET : 0));
     };
 
     const handleBetInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const val = Math.max(0, Math.min(Number(e.target.value), cash));
+        const val = Math.max(minBet, Math.min(Number(e.target.value), cash));
         setBetAmount(val);
     };
 
     const handleBet = () => {
-        if (betAmount <= 0 || betAmount > cash) return;
+        if (betAmount < minBet || betAmount > cash) return;
         getSocket()?.emit(EMIT_BET_COIN, { roomCode, playerId, betting: betAmount });
         setBetAmount(0);
     };
@@ -61,22 +67,24 @@ export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlaye
             </div>
 
             <div className={styles.actions}>
-                <button className={`${styles.btn} ${styles.foldBtn}`} onClick={handleFold}>
-                    Fold
-                </button>
+                {!isForcedBetPhase && (
+                    <button className={`${styles.btn} ${styles.foldBtn}`} onClick={handleFold}>
+                        Fold
+                    </button>
+                )}
                 <div className={styles.betControls}>
-                    <button className={styles.btn} onClick={handleDecrease} disabled={betAmount <= 0}>-</button>
+                    <button className={styles.btn} onClick={handleDecrease} disabled={betAmount <= minBet}>-</button>
                     <input
                         type="number"
                         className={styles.betInput}
                         value={betAmount}
-                        min={0}
+                        min={minBet}
                         max={cash}
                         onChange={handleBetInput}
                     />
                     <button className={styles.btn} onClick={handleIncrease} disabled={betAmount >= cash}>+</button>
                 </div>
-                <button className={`${styles.btn} ${styles.betBtn}`} onClick={handleBet} disabled={betAmount <= 0}>
+                <button className={`${styles.btn} ${styles.betBtn}`} onClick={handleBet} disabled={betAmount < minBet}>
                     Bet
                 </button>
             </div>

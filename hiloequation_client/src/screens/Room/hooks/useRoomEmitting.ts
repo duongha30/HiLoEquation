@@ -5,7 +5,7 @@ import { getSocket } from "@/store/socket/socket";
 import { EMIT_DEAL_CARD } from "@/store/socket/events";
 
 export const useRoomEmitting = () => {
-    // const isHost = useAppSelector(isHostPlayer);
+    const isHost = useAppSelector(isHostPlayer);
     const roomCode = useAppSelector(selectRoomCode);
     const players = useAppSelector(selectAllPlayers);
     const isPlaying = useAppSelector(selectIsPlaying);
@@ -22,17 +22,17 @@ export const useRoomEmitting = () => {
 
     useEffect(() => {
         console.log('round 1', round)
-        if (isPlaying && round === 1) {
+        if (isHost && isPlaying && round === 1) {
             getSocket()?.emit(EMIT_DEAL_CARD, { roomCode, players, times: 1, isFirstDraw: false });
         }
-    }, [round, isPlaying, roomCode, players]);
+    }, [isHost, round, isPlaying, roomCode, players]);
 
     useEffect(() => {
         console.log('round 2 & 3', round)
         if (round > 1 && round < 4) {
-            if (isPlaying && allPlayersHaveBet) {
+            if (isHost && isPlaying && allPlayersHaveBet) {
                 getSocket()?.emit(EMIT_DEAL_CARD, { roomCode, players, times: 1, isFirstDraw: false });
             }
         }
-    }, [round, isPlaying, allPlayersHaveBet, roomCode, players]);
+    }, [isHost, round, isPlaying, allPlayersHaveBet, roomCode, players]);
 }

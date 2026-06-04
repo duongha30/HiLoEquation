@@ -10,7 +10,8 @@ import type { GameState } from '../../game/types';
 
 export default (io: Server, socket: Socket) => {
     socket.on(ON_START_GAME, async ({ roomCode, playerIds }: { roomCode: string; playerIds: string[] }) => {
-        const roomState = await Game.start(roomCode, playerIds);
+        await Game.start(roomCode, playerIds);
+        const roomState = await Game.deal(roomCode, playerIds, 1, true);
 
         emitHandler({
             io, roomCode, eventName: EMIT_START, result: roomState, buildSuccessPayload: (value: GameState) => ({
@@ -18,6 +19,7 @@ export default (io: Server, socket: Socket) => {
                     round: value.round,
                     totalBetting: value.totalBetting,
                     hands: value.hands,
+                    bettingRound: value.bettingRound,
                 }
             })
         });

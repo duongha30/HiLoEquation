@@ -4,11 +4,11 @@ import { Game } from '../../game';
 import { emitHandler } from '../../utils/socketUtils';
 
 export default (io: Server, socket: Socket) => {
-    socket.on(ON_BET_COIN, async ({ roomCode, playerId, betting }: { roomCode: string; playerId: string; betting: number }) => {
+    socket.on(ON_BET_COIN, async ({ roomCode, playerId, betting, isFirstBet }: { roomCode: string; playerId: string; betting: number, isFirstBet: boolean }) => {
         if (!playerId || socket.data.playerId !== playerId) { socket.emit(EMIT_BETTING, { status: ERROR }); return; }
 
-        const playerState = await Game.bet(roomCode, playerId, betting);
-        emitHandler({ io, roomCode, eventName: EMIT_BETTING, result: playerState, buildSuccessPayload: (value) => ({ playerState: value, playerId, status: SUCCESS }) });
+        const playerState = await Game.bet(roomCode, playerId, betting, isFirstBet);
+        emitHandler({ io, roomCode, eventName: EMIT_BETTING, result: playerState, buildSuccessPayload: (value) => ({ playerState: value, playerId, round: value.round, status: SUCCESS }) });
     });
 
     socket.on(ON_FOLD_CARD, async ({ roomCode, playerId }: { roomCode: string; playerId: string }) => {

@@ -1,11 +1,11 @@
 import { selectAllPlayers, selectIsSocketConnected, selectRoomCode, selectUserId, setGameState, setPlayingStatus } from "@/store";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { updatePlayersInRoom } from "@/store/reducers/room";
-import { updateHand } from "@/store/reducers/game";
+import { setIsForcedBetPhase, updateHand, updateRound } from "@/store/reducers/game";
 import type { HandSnapshot } from "@/store/reducers/game";
 import { EMIT_DEAL_CARD, ON_BETTING, ON_CARD_DEAL, ON_FOLDING, ON_PLAYER_JOIN, ON_PLAYER_READY, ON_START, ON_PLAYER_ACTION, ON_BETTING_ROUND_END } from "@/store/socket/events";
 import { getSocket } from "@/store/socket/socket";
-import { useRoomStore } from "@/screens/Room/roomStore";
+import { useRoomStore } from "../roomStore";
 import type { ServerRoomState } from '@/store/reducers/game';
 import { useEffect } from 'react';
 import { decryptCards } from "@/utils/card";
@@ -67,12 +67,16 @@ export const useRoomSubscription = () => {
             dispatch(setGameState(roomState));
         }
 
-        const onBetCoin = (data: { status: number; playerId: string; playerState: HandSnapshot }) => {
+        const onBetCoin = (data: { status: number; playerId: string; playerState: any; round: number }) => {
             if (data.status !== 200) return;
             dispatch(updateHand({ playerId: data.playerId, hand: { cash: data.playerState.cash, bet: data.playerState.bet } }));
+            dispatch(updateRound(data.round));
+            if (data.round === 1) {
+                dispatch(setIsForcedBetPhase(false));
+            };
         };
 
-        const onFoldCard = (data: { status: number; playerId: string; playerState: HandSnapshot }) => {
+        const onFoldCard = (data: { status: number; playerId: string; playerState: any }) => {
             if (data.status !== 200) return;
             dispatch(updateHand({ playerId: data.playerId, hand: { cards: null } }));
         };

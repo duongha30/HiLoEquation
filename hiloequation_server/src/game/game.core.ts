@@ -196,13 +196,13 @@ class GameCore implements IGameCore {
             ...roomState,
             hands: nextHands,
             deck: currentDeck,
-            round: roomState.round + 1,
+            round: isFirstDraw ? roomState.round : roomState.round + 1,
         };
         await this.setState(roomCode, nextRoomState);
         return this.cloneRoom(nextRoomState);
     }
 
-    async bet(roomCode: string, playerId: string, betting: number) {
+    async bet(roomCode: string, playerId: string, betting: number, isFirstBet: boolean) {
         const roomState = await this.getState(roomCode);
         if (!roomState) return undefined;
 
@@ -211,16 +211,32 @@ class GameCore implements IGameCore {
 
         if (betting <= 0 || betting > playerState.cash) return undefined;
 
+        const updatedHands: HandsType = {
+            ...roomState.hands,
+            [playerId]: { ...playerState, bet: playerState.bet + betting, cash: playerState.cash - betting },
+        };
+
+        const allEqualBet =
+            isFirstBet &&
+            roomState.round === 0 &&
+            (() => {
+                const active = Object.values(updatedHands).filter((p) => p.cards !== null);
+                const first = active[0]?.bet ?? 0;
+                return active.length > 0 && first > 0 && active.every((p) => p.bet === first);
+            })();
+
+        const nextRound = allEqualBet ? roomState.round + 1 : roomState.round;
+
         const nextRoomState: GameState = {
             ...roomState,
-            hands: {
-                ...roomState.hands,
-                [playerId]: { ...playerState, bet: playerState.bet + betting, cash: playerState.cash - betting },
-            },
+            hands: updatedHands,
+            round: nextRound,
             totalBetting: roomState.totalBetting + betting,
         };
         await this.setState(roomCode, nextRoomState);
-        return this.getPlayer(roomCode, playerId);
+
+        const player = await this.getPlayer(roomCode, playerId);
+        return player ? { ...player, round: nextRound } : undefined;
     }
 
     async fold(roomCode: string, playerId: string) {

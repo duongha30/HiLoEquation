@@ -40,7 +40,9 @@ export {
     setGameState,
     updateHand,
     resetGame,
-    setPlayingStatus
+    setPlayingStatus,
+    updateRound,
+    setIsForcedBetPhase,
 } from './reducers/game';
 export {
     leaveRoom,

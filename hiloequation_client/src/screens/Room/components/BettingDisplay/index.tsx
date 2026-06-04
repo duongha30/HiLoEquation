@@ -1,14 +1,13 @@
 import styles from './BettingDisplay.module.css';
 import { useAppSelector } from '@/store/hooks';
-import { selectAllHands, selectAllPlayers, selectIsPlaying, selectGameRound } from '@/store';
+import { selectAllHands, selectAllPlayers, selectIsPlaying } from '@/store';
 
 export const BettingDisplay = () => {
     const isPlaying = useAppSelector(selectIsPlaying);
-    const round = useAppSelector(selectGameRound);
     const players = useAppSelector(selectAllPlayers);
     const allHands = useAppSelector(selectAllHands);
 
-    if (!isPlaying || round < 1) return null;
+    if (!isPlaying) return null;
 
     return (
         <div className={styles.container}>

@@ -196,7 +196,6 @@ class GameCore implements IGameCore {
             ...roomState,
             hands: nextHands,
             deck: currentDeck,
-            round: isFirstDraw ? roomState.round : roomState.round + 1,
         };
         await this.setState(roomCode, nextRoomState);
         return this.cloneRoom(nextRoomState);
@@ -371,6 +370,7 @@ class GameCore implements IGameCore {
         }
 
         let roundEnded = false;
+        let consensusEnd = false;
 
         if (br.activePlayers.length <= 1) {
             roundEnded = true;
@@ -384,8 +384,13 @@ class GameCore implements IGameCore {
 
             if (nextPlayer === br.lastRaiserId || !br.activePlayers.includes(br.lastRaiserId)) {
                 roundEnded = true;
+                consensusEnd = true;
                 br.active = false;
             }
+        }
+
+        if (consensusEnd) {
+            roomState.round += 1;
         }
 
         await this.setState(roomCode, roomState);

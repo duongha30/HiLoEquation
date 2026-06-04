@@ -130,28 +130,7 @@ export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlaye
                 ))}
             </div>
 
-            {!isForcedBetPhase && !isMyTurn && (
-                <div className={styles.actions}>
-                    <button className={`${styles.btn} ${styles.foldBtn}`} onClick={handleFold}>
-                        Fold
-                    </button>
-                    <div className={styles.betControls}>
-                        <button className={styles.btn} onClick={handleDecrease} disabled={betAmount <= 0}>-</button>
-                        <input
-                            type="number"
-                            className={styles.betInput}
-                            value={betAmount}
-                            min={1}
-                            max={cash}
-                            onChange={handleBetInput}
-                        />
-                        <button className={styles.btn} onClick={handleIncrease} disabled={betAmount >= cash}>+</button>
-                    </div>
-                    <button className={`${styles.btn} ${styles.betBtn}`} onClick={handleBet} disabled={betAmount <= 0}>
-                        Bet
-                    </button>
-                </div>
-            )}
+            {!isForcedBetPhase && !isMyTurn && null}
 
             {isMyTurn && (
                 <div className={styles.bettingRoundPanel}>

@@ -1,5 +1,5 @@
 import type { Server, Socket } from 'socket.io';
-import { SUCCESS, ERROR, ON_BET_COIN, ON_FOLD_CARD, EMIT_BETTING, EMIT_FOLDING } from '../events';
+import { SUCCESS, ERROR, ON_BET_COIN, ON_FOLD_CARD, ON_PLAYER_ACTION, EMIT_BETTING, EMIT_FOLDING, EMIT_PLAYER_ACTION, EMIT_BETTING_ROUND_END, SOCKET_ERROR } from '../events';
 import { Game } from '../../game';
 import { emitHandler } from '../../utils/socketUtils';
 
@@ -16,5 +16,32 @@ export default (io: Server, socket: Socket) => {
 
         const playerState = await Game.fold(roomCode, playerId);
         emitHandler({ io, roomCode, eventName: EMIT_FOLDING, result: playerState, buildSuccessPayload: (value) => ({ playerState: value, playerId, status: SUCCESS }) });
+    });
+
+    socket.on(ON_PLAYER_ACTION, async ({ roomCode, playerId, action, amount }: { roomCode: string; playerId: string; action: 'bet' | 'check' | 'fold'; amount?: number }) => {
+        if (!playerId || socket.data.playerId !== playerId) {
+            socket.emit(SOCKET_ERROR, { status: 403, message: 'Unauthorized' });
+            return;
+        }
+
+        const result = await Game.processBettingAction(roomCode, playerId, action, amount);
+        if (!result) {
+            socket.emit(SOCKET_ERROR, { status: 400, message: 'Invalid action' });
+            return;
+        }
+
+        const { state, roundEnded } = result;
+        const payload = {
+            status: SUCCESS,
+            roomState: {
+                round: state.round,
+                totalBetting: state.totalBetting,
+                hands: state.hands,
+                bettingRound: state.bettingRound,
+            },
+        };
+
+        const eventName = roundEnded ? EMIT_BETTING_ROUND_END : EMIT_PLAYER_ACTION;
+        io.to(roomCode).emit(eventName, payload);
     });
 };

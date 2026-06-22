@@ -7,7 +7,7 @@ import { useDrapDrop } from './hooks/useDragDrop';
 import { useRoomStore } from './roomStore';
 import { useAppSelector } from '@/store/hooks';
 import { selectAllGuess, selectMyHand } from '@/store';
-import { StartReadyButton, BettingDisplay } from './components/';
+import { StartReadyButton, BettingDisplay, DeclareTimer } from './components/';
 import { useRoomEmitting } from './hooks/useRoomEmitting';
 
 export const Room = () => {
@@ -49,6 +49,7 @@ export const Room = () => {
         <div className={styles.deckSection}>
           <StartReadyButton />
           <BettingDisplay />
+          <DeclareTimer />
           <Deck />
         </div>
         <MainPlayer

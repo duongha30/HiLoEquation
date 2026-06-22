@@ -38,6 +38,7 @@ export {
 export { disconnectSocketReducer } from './reducers/socket';
 export {
     setGameState,
+    setGameStateWithoutCards,
     updateHand,
     resetGame,
     setPlayingStatus,

@@ -56,6 +56,15 @@ const gameSlice = createSlice({
             state.hands = action.payload.hands;
             state.bettingRound = action.payload.bettingRound ?? null;
         },
+        setGameStateWithoutCards: (state, action: PayloadAction<ServerRoomState>) => {
+            state.round = action.payload.round;
+            state.totalBetting = action.payload.totalBetting;
+            state.bettingRound = action.payload.bettingRound ?? null;
+            for (const [playerId, hand] of Object.entries(action.payload.hands)) {
+                const existingCards = state.hands[playerId]?.cards ?? null;
+                state.hands[playerId] = { ...hand, cards: existingCards };
+            }
+        },
         updateHand: (state, action: PayloadAction<{ playerId: string; hand: Partial<HandSnapshot>; totalBetting?: number }>) => {
             const { playerId, hand, totalBetting } = action.payload;
             if (state.hands[playerId]) {
@@ -81,5 +90,5 @@ const gameSlice = createSlice({
     },
 });
 
-export const { setGameState, updateHand, resetGame, setPlayingStatus, updateRound, setIsForcedBetPhase, setPotSelection } = gameSlice.actions;
+export const { setGameState, setGameStateWithoutCards, updateHand, resetGame, setPlayingStatus, updateRound, setIsForcedBetPhase, setPotSelection } = gameSlice.actions;
 export default gameSlice.reducer;

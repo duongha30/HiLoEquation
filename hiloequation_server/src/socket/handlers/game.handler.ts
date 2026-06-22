@@ -27,7 +27,6 @@ export default (io: Server, socket: Socket) => {
 
     socket.on(ON_DEAL_CARD, async ({ roomCode, players, times = 1, isFirstDraw = false }: { roomCode: string; players: string[]; times?: number; isFirstDraw?: boolean }) => {
         let roomState = await Game.deal(roomCode, players, times, isFirstDraw);
-        console.log('roomState round: ', roomState?.round)
         if (!roomState) {
             socket.emit(EMIT_CARD_DEAL, { status: ERROR });
             return;

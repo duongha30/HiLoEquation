@@ -306,6 +306,22 @@ class GameCore implements IGameCore {
         return this.getPlayer(roomCode, playerId);
     }
 
+    async declarePot(roomCode: string, playerId: string, selection: 'hi' | 'lo' | 'swing') {
+        const roomState = await this.getState(roomCode);
+        if (!roomState) return undefined;
+        if (roomState.round !== 4) return undefined;
+
+        const playerState = this.getRequiredPlayer(roomState, playerId);
+        if (!playerState || playerState.cards === null) return undefined;
+
+        const nextRoomState: GameState = {
+            ...roomState,
+            hands: { ...roomState.hands, [playerId]: { ...playerState, potSelection: selection } },
+        };
+        await this.setState(roomCode, nextRoomState);
+        return this.cloneRoom(nextRoomState);
+    }
+
     async finalizeRound(roomCode: string) {
         const roomState = await this.getState(roomCode);
         if (!roomState) return undefined;

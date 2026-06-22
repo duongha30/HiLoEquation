@@ -1,5 +1,5 @@
 'use strict';
-import { createDeck, drawOnlyNumber, drawCard, shuffleDeck, encryptCards } from './deck.ts';
+import { createDeck, drawOnlyNumber, shuffleDeck, encryptCards } from './deck.ts';
 import type {
     CardData,
     GameState,
@@ -148,61 +148,84 @@ class GameCore implements IGameCore {
             const playerState = nextHands[playerId];
             if (!playerState) return undefined;
 
-            const hasSymbolCard = playerState.cards?.some(
-                (card) => card.type === 'sqrt' || card.type === 'multiply'
-            );
-
+            const existingCards = playerState.cards ?? [];
+            let updatedCards = [...existingCards];
             let drawnCards: CardData[] = [];
-            for (let i = 0; i < times; i++) {
-                const result = (isFirstDraw || hasSymbolCard)
-                    ? drawOnlyNumber(currentDeck)
-                    : drawCard(currentDeck);
 
-                if (result instanceof Error || !result) continue;
+            if (isFirstDraw) {
+                for (let i = 0; i < times; i++) {
+                    const result = drawOnlyNumber(currentDeck);
+                    if (!result.card) continue;
+                    currentDeck = result.deck;
+                    drawnCards.push(result.card);
+                }
 
-                const { card, deck: remainingDeck } = result;
-                currentDeck = remainingDeck;
-                if (card) {
-                    if (Array.isArray(card)) {
-                        drawnCards = [...drawnCards, ...card];
-                    } else {
-                        drawnCards.push(card);
+                const shouldAddDefaultOps = existingCards.length === 0;
+                const defaultOps = shouldAddDefaultOps
+                    ? DEFAULT_OPERATION_CARDS.map((c) => ({ ...c }))
+                    : [];
+
+                nextHands[playerId] = {
+                    cash: playerState.cash,
+                    score: playerState.score,
+                    bet: playerState.bet,
+                    cards: [...existingCards, ...encryptCards(drawnCards, playerId), ...defaultOps],
+                };
+            } else {
+                // Round deal: always draw exactly one number card (unencrypted)
+                const baseResult = drawOnlyNumber(currentDeck);
+                if (baseResult.card) {
+                    currentDeck = baseResult.deck;
+                    drawnCards.push(baseResult.card);
+                }
+
+                const hasSqrt = existingCards.some((c) => c.type === 'sqrt');
+                const hasMultiply = existingCards.some((c) => c.type === 'multiply');
+
+                // √ bonus: draw one additional number card
+                if (hasSqrt) {
+                    const r = drawOnlyNumber(currentDeck);
+                    if (r.card) {
+                        currentDeck = r.deck;
+                        drawnCards.push(r.card);
                     }
                 }
+
+                // × effect: discard one random operator card, draw one additional number card
+                if (hasMultiply) {
+                    const opIndices = existingCards
+                        .map((c, i) => (c.type === 'operation' ? i : -1))
+                        .filter((i) => i >= 0);
+                    if (opIndices.length > 0) {
+                        const removeIdx = opIndices[Math.floor(Math.random() * opIndices.length)];
+                        updatedCards = existingCards.filter((_, i) => i !== removeIdx);
+                    }
+                    const r = drawOnlyNumber(currentDeck);
+                    if (r.card) {
+                        currentDeck = r.deck;
+                        drawnCards.push(r.card);
+                    }
+                }
+
+                nextHands[playerId] = {
+                    cash: playerState.cash,
+                    score: playerState.score,
+                    bet: playerState.bet,
+                    cards: [...updatedCards, ...drawnCards],
+                };
             }
-
-            const shouldAddDefaultOps = isFirstDraw && (playerState.cards ?? []).length === 0;
-            const defaultOperationCards = shouldAddDefaultOps
-                ? DEFAULT_OPERATION_CARDS.map((card) => ({ ...card }))
-                : [];
-
-            const markedDrawnCards = isFirstDraw
-                ? encryptCards(drawnCards, playerId)
-                : drawnCards;
-
-            nextHands[playerId] = {
-                cash: playerState.cash,
-                score: playerState.score,
-                bet: playerState.bet,
-                cards: [
-                    ...(playerState.cards ?? []),
-                    ...markedDrawnCards,
-                    ...defaultOperationCards,
-                ],
-            };
         }
 
         const nextRoomState: GameState = {
             ...roomState,
             hands: nextHands,
             deck: currentDeck,
-            round: roomState.round + 1,
         };
         await this.setState(roomCode, nextRoomState);
         return this.cloneRoom(nextRoomState);
     }
 
-    async bet(roomCode: string, playerId: string, betting: number) {
+    async bet(roomCode: string, playerId: string, betting: number, isFirstBet: boolean) {
         const roomState = await this.getState(roomCode);
         if (!roomState) return undefined;
 
@@ -211,16 +234,32 @@ class GameCore implements IGameCore {
 
         if (betting <= 0 || betting > playerState.cash) return undefined;
 
+        const updatedHands: HandsType = {
+            ...roomState.hands,
+            [playerId]: { ...playerState, bet: playerState.bet + betting, cash: playerState.cash - betting },
+        };
+
+        const allEqualBet =
+            isFirstBet &&
+            roomState.round === 0 &&
+            (() => {
+                const active = Object.values(updatedHands).filter((p) => p.cards !== null);
+                const first = active[0]?.bet ?? 0;
+                return active.length > 0 && first > 0 && active.every((p) => p.bet === first);
+            })();
+
+        const nextRound = allEqualBet ? roomState.round + 1 : roomState.round;
+
         const nextRoomState: GameState = {
             ...roomState,
-            hands: {
-                ...roomState.hands,
-                [playerId]: { ...playerState, bet: playerState.bet + betting, cash: playerState.cash - betting },
-            },
+            hands: updatedHands,
+            round: nextRound,
             totalBetting: roomState.totalBetting + betting,
         };
         await this.setState(roomCode, nextRoomState);
-        return this.getPlayer(roomCode, playerId);
+
+        const player = await this.getPlayer(roomCode, playerId);
+        return player ? { ...player, round: nextRound } : undefined;
     }
 
     async fold(roomCode: string, playerId: string) {
@@ -355,6 +394,7 @@ class GameCore implements IGameCore {
         }
 
         let roundEnded = false;
+        let consensusEnd = false;
 
         if (br.activePlayers.length <= 1) {
             roundEnded = true;
@@ -368,8 +408,13 @@ class GameCore implements IGameCore {
 
             if (nextPlayer === br.lastRaiserId || !br.activePlayers.includes(br.lastRaiserId)) {
                 roundEnded = true;
+                consensusEnd = true;
                 br.active = false;
             }
+        }
+
+        if (consensusEnd) {
+            roomState.round += 1;
         }
 
         await this.setState(roomCode, roomState);

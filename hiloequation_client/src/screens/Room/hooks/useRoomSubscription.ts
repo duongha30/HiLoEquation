@@ -1,11 +1,10 @@
-import { selectAllPlayers, selectIsSocketConnected, selectRoomCode, selectUserId, setGameState, setPlayingStatus } from "@/store";
+import { selectIsSocketConnected, selectUserId, setGameState, setPlayingStatus } from "@/store";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { updatePlayersInRoom } from "@/store/reducers/room";
-import { updateHand } from "@/store/reducers/game";
-import type { HandSnapshot } from "@/store/reducers/game";
-import { EMIT_DEAL_CARD, ON_BETTING, ON_CARD_DEAL, ON_FOLDING, ON_PLAYER_JOIN, ON_PLAYER_READY, ON_START, ON_PLAYER_ACTION, ON_BETTING_ROUND_END } from "@/store/socket/events";
+import { setIsForcedBetPhase, updateHand, updateRound } from "@/store/reducers/game";
+import { ON_BETTING, ON_CARD_DEAL, ON_FOLDING, ON_PLAYER_JOIN, ON_PLAYER_READY, ON_START, ON_PLAYER_ACTION, ON_BETTING_ROUND_END } from "@/store/socket/events";
 import { getSocket } from "@/store/socket/socket";
-import { useRoomStore } from "@/screens/Room/roomStore";
+import { useRoomStore } from "../roomStore";
 import type { ServerRoomState } from '@/store/reducers/game';
 import { useEffect } from 'react';
 import { decryptCards } from "@/utils/card";
@@ -17,9 +16,7 @@ export const useRoomSubscription = () => {
     const dispatch = useAppDispatch();
     const isConnected = useAppSelector(selectIsSocketConnected);
     const setPlayerReady = useRoomStore((s) => s.setPlayerReady);
-    const players = useAppSelector(selectAllPlayers);
     const playerId = useAppSelector(selectUserId);
-    const roomCode = useAppSelector(selectRoomCode);
 
     useEffect(() => {
         const socket = getSocket();
@@ -42,11 +39,20 @@ export const useRoomSubscription = () => {
             setPlayerReady(data.playerId, data.isReady);
         };
 
-        const onStartGame = (data: StartGameSocketEvent) => {
+        const onStartGame = async (data: StartGameSocketEvent) => {
             if (data.status !== 200 || !data.roomState) return;
-            dispatch(setGameState(data.roomState));
+            const myHand = data.roomState.hands[playerId ?? ''];
+            const myCards = myHand?.cards || [];
+            const decryptedCards = await decryptCards(myCards, playerId);
+            const roomState = {
+                ...data.roomState,
+                hands: {
+                    ...data.roomState.hands,
+                    ...(playerId ? { [playerId]: { ...myHand, cards: decryptedCards } } : {}),
+                },
+            };
+            dispatch(setGameState(roomState));
             dispatch(setPlayingStatus(true));
-            getSocket()?.emit(EMIT_DEAL_CARD, { roomCode, players, times: 1, isFirstDraw: true });
         };
 
         const onDealCard = async (data: any) => {
@@ -67,12 +73,16 @@ export const useRoomSubscription = () => {
             dispatch(setGameState(roomState));
         }
 
-        const onBetCoin = (data: { status: number; playerId: string; playerState: HandSnapshot }) => {
+        const onBetCoin = (data: { status: number; playerId: string; playerState: any; round: number }) => {
             if (data.status !== 200) return;
             dispatch(updateHand({ playerId: data.playerId, hand: { cash: data.playerState.cash, bet: data.playerState.bet } }));
+            dispatch(updateRound(data.round));
+            if (data.round === 1) {
+                dispatch(setIsForcedBetPhase(false));
+            };
         };
 
-        const onFoldCard = (data: { status: number; playerId: string; playerState: HandSnapshot }) => {
+        const onFoldCard = (data: { status: number; playerId: string; playerState: any }) => {
             if (data.status !== 200) return;
             dispatch(updateHand({ playerId: data.playerId, hand: { cards: null } }));
         };
@@ -106,5 +116,5 @@ export const useRoomSubscription = () => {
             socket.off(ON_PLAYER_ACTION, onPlayerAction);
             socket.off(ON_BETTING_ROUND_END, onBettingRoundEnd);
         };
-    }, [isConnected, setPlayerReady, dispatch]);
+    }, [isConnected, setPlayerReady, dispatch, playerId]);
 };

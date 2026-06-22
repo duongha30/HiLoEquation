@@ -58,3 +58,8 @@ export const selectCurrentBet = createAppSelector(
     [(state) => state.gameReducer.bettingRound],
     (br) => br?.currentBet ?? 0,
 );
+
+export const selectIsForcedBetPhase = createAppSelector(
+    [(state) => state.gameReducer.isForcedBetPhase],
+    (isForcedBetPhase) => isForcedBetPhase,
+);

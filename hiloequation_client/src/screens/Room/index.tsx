@@ -2,12 +2,13 @@ import { useEffect, useMemo, useRef } from 'react';
 import { DragDropProvider } from '@dnd-kit/react';
 import styles from './Room.module.css';
 import { Deck, MainPlayer, Player } from '@/components';
-import { useRoomSubscription } from '@/hooks';
+import { useRoomSubscription } from './hooks/useRoomSubscription';
 import { useDrapDrop } from './hooks/useDragDrop';
 import { useRoomStore } from './roomStore';
 import { useAppSelector } from '@/store/hooks';
 import { selectAllGuess, selectMyHand } from '@/store';
 import { StartReadyButton, BettingDisplay } from './components/';
+import { useRoomEmitting } from './hooks/useRoomEmitting';
 
 export const Room = () => {
   const cardRefs = useRef<Map<string, HTMLElement>>(new Map());
@@ -19,6 +20,7 @@ export const Room = () => {
   const playerCardsRef = useRef(playerCards);
 
   useRoomSubscription();
+  useRoomEmitting();
 
   const {
     handleDragStart,

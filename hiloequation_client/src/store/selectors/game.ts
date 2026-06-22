@@ -63,3 +63,8 @@ export const selectIsForcedBetPhase = createAppSelector(
     [(state) => state.gameReducer.isForcedBetPhase],
     (isForcedBetPhase) => isForcedBetPhase,
 );
+
+export const selectPotSelection = createAppSelector(
+    [(state) => state.gameReducer.potSelection],
+    (potSelection) => potSelection,
+);

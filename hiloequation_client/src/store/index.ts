@@ -38,11 +38,13 @@ export {
 export { disconnectSocketReducer } from './reducers/socket';
 export {
     setGameState,
+    setGameStateWithoutCards,
     updateHand,
     resetGame,
     setPlayingStatus,
     updateRound,
     setIsForcedBetPhase,
+    setPotSelection,
 } from './reducers/game';
 export {
     leaveRoom,

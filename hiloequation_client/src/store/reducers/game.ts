@@ -25,11 +25,14 @@ export type ServerRoomState = {
     bettingRound?: BettingRoundState | null;
 };
 
+export type PotSelection = 'hi' | 'lo' | 'swing' | null;
+
 export type GameState = ServerRoomState & {
     status: 'idle' | 'loading' | 'failed';
     isPlaying: boolean;
     bettingRound: BettingRoundState | null;
     isForcedBetPhase: boolean;
+    potSelection: PotSelection;
 };
 
 const initialState: GameState = {
@@ -40,6 +43,7 @@ const initialState: GameState = {
     status: 'idle',
     bettingRound: null,
     isForcedBetPhase: false,
+    potSelection: null,
 };
 
 const gameSlice = createSlice({
@@ -51,6 +55,15 @@ const gameSlice = createSlice({
             state.totalBetting = action.payload.totalBetting;
             state.hands = action.payload.hands;
             state.bettingRound = action.payload.bettingRound ?? null;
+        },
+        setGameStateWithoutCards: (state, action: PayloadAction<ServerRoomState>) => {
+            state.round = action.payload.round;
+            state.totalBetting = action.payload.totalBetting;
+            state.bettingRound = action.payload.bettingRound ?? null;
+            for (const [playerId, hand] of Object.entries(action.payload.hands)) {
+                const existingCards = state.hands[playerId]?.cards ?? null;
+                state.hands[playerId] = { ...hand, cards: existingCards };
+            }
         },
         updateHand: (state, action: PayloadAction<{ playerId: string; hand: Partial<HandSnapshot>; totalBetting?: number }>) => {
             const { playerId, hand, totalBetting } = action.payload;
@@ -67,6 +80,9 @@ const gameSlice = createSlice({
         setIsForcedBetPhase: (state, action: PayloadAction<boolean>) => {
             state.isForcedBetPhase = action.payload;
         },
+        setPotSelection: (state, action: PayloadAction<PotSelection>) => {
+            state.potSelection = action.payload;
+        },
         setPlayingStatus: (state, action: PayloadAction<boolean>) => {
             state.isPlaying = action.payload;
         },
@@ -74,5 +90,5 @@ const gameSlice = createSlice({
     },
 });
 
-export const { setGameState, updateHand, resetGame, setPlayingStatus, updateRound, setIsForcedBetPhase } = gameSlice.actions;
+export const { setGameState, setGameStateWithoutCards, updateHand, resetGame, setPlayingStatus, updateRound, setIsForcedBetPhase, setPotSelection } = gameSlice.actions;
 export default gameSlice.reducer;

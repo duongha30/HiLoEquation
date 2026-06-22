@@ -145,3 +145,30 @@
     font-weight: 600;
     letter-spacing: 0.05em;
 }
+
+.potSelectionPanel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    border-top: 1px solid rgba(201, 168, 76, 0.4);
+    padding-top: 0.5rem;
+    width: 100%;
+}
+
+.potBtn {
+    background: #374151;
+}
+
+.potBtn:hover:not(:disabled) {
+    background: #4b5563;
+}
+
+.potBtnActive {
+    background: #c9a84c;
+    color: #1a1a2e;
+}
+
+.potBtnActive:hover:not(:disabled) {
+    background: #b8973f;
+}

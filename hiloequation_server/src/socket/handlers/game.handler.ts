@@ -27,13 +27,12 @@ export default (io: Server, socket: Socket) => {
 
     socket.on(ON_DEAL_CARD, async ({ roomCode, players, times = 1, isFirstDraw = false }: { roomCode: string; players: string[]; times?: number; isFirstDraw?: boolean }) => {
         let roomState = await Game.deal(roomCode, players, times, isFirstDraw);
-        console.log('roomState round: ', roomState?.round)
         if (!roomState) {
             socket.emit(EMIT_CARD_DEAL, { status: ERROR });
             return;
         }
 
-        if (roomState.round === 1 || roomState.round === 2) {
+        if (roomState.round === 1 || roomState.round === 2 || roomState.round === 3) {
             const playerIds = Object.keys(roomState.hands);
             const withBetting = await Game.startBettingRound(roomCode, playerIds);
             if (withBetting) roomState = withBetting;

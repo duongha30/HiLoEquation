@@ -1,4 +1,4 @@
-import { selectIsSocketConnected, selectUserId, setGameState, setPlayingStatus } from "@/store";
+import { selectIsSocketConnected, selectUserId, setGameState, setPlayingStatus, setGameStateWithoutCards } from "@/store";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { updatePlayersInRoom } from "@/store/reducers/room";
 import { setIsForcedBetPhase, updateHand, updateRound } from "@/store/reducers/game";
@@ -89,12 +89,12 @@ export const useRoomSubscription = () => {
 
         const onPlayerAction = (data: any) => {
             if (data.status !== 200 || !data.roomState) return;
-            dispatch(setGameState(data.roomState));
+            dispatch(setGameStateWithoutCards(data.roomState));
         };
 
         const onBettingRoundEnd = (data: any) => {
             if (data.status !== 200 || !data.roomState) return;
-            dispatch(setGameState(data.roomState));
+            dispatch(setGameStateWithoutCards(data.roomState));
         };
 
         socket.on(ON_PLAYER_JOIN, onPlayerJoin);

@@ -8,8 +8,8 @@ import { selectUserId } from '@/store/selectors/user';
 import { selectRoomCode } from '@/store/selectors/room';
 import { getSocket } from '@/store/socket/socket';
 import { EMIT_BET_COIN, EMIT_FOLD_CARD, EMIT_PLAYER_ACTION } from '@/store/socket/events';
-import { selectMyHand, selectGameRound, selectIsPlaying, selectBettingRound, selectCurrentBet, selectIsMyTurn, setIsForcedBetPhase } from '@/store';
-import { selectIsForcedBetPhase } from '@/store/selectors/game';
+import { selectMyHand, selectGameRound, selectIsPlaying, selectBettingRound, selectCurrentBet, selectIsMyTurn, setIsForcedBetPhase, setPotSelection } from '@/store';
+import { selectIsForcedBetPhase, selectPotSelection } from '@/store/selectors/game';
 
 const BET_STEP = 10;
 const MIN_FORCED_BET = 50;
@@ -37,6 +37,7 @@ export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlaye
     const currentBet = useAppSelector(selectCurrentBet);
     const isMyTurn = useAppSelector(selectIsMyTurn);
     const isForcedBetPhase = useAppSelector(selectIsForcedBetPhase);
+    const potSelection = useAppSelector(selectPotSelection);
 
     const myContribution = bettingRound?.contributions[playerId ?? ''] ?? 0;
     const callAmount = Math.max(0, currentBet - myContribution);
@@ -48,6 +49,12 @@ export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlaye
             return () => clearTimeout(timer);
         }
     }, [isPlaying, round, myHand]);
+
+    useEffect(() => {
+        if (round === 0) {
+            dispatch(setPotSelection(null));
+        }
+    }, [round]);
 
     const handleIncrease = () => {
         setBetAmount((prev) => Math.min(prev + BET_STEP, cash));
@@ -79,6 +86,10 @@ export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlaye
 
     const handleRoundFold = () => {
         getSocket()?.emit(EMIT_PLAYER_ACTION, { roomCode, playerId, action: 'fold' });
+    };
+
+    const handlePotSelection = (selection: 'hi' | 'lo' | 'swing') => {
+        dispatch(setPotSelection(selection));
     };
 
     return (
@@ -147,6 +158,32 @@ export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlaye
                             {callAmount > 0 && betAmount === callAmount ? `Call ${callAmount}` : 'Bet'}
                         </button>
                         <button className={`${styles.btn} ${styles.foldBtn}`} onClick={handleRoundFold}>Fold</button>
+                    </div>
+                </div>
+            )}
+
+            {isPlaying && round === 4 && (
+                <div className={styles.potSelectionPanel}>
+                    <span className={styles.bettingRoundLabel}>Declare your pot</span>
+                    <div className={styles.actions}>
+                        <button
+                            className={`${styles.btn} ${styles.potBtn} ${potSelection === 'hi' ? styles.potBtnActive : ''}`}
+                            onClick={() => handlePotSelection('hi')}
+                        >
+                            Hi Pot
+                        </button>
+                        <button
+                            className={`${styles.btn} ${styles.potBtn} ${potSelection === 'lo' ? styles.potBtnActive : ''}`}
+                            onClick={() => handlePotSelection('lo')}
+                        >
+                            Lo Pot
+                        </button>
+                        <button
+                            className={`${styles.btn} ${styles.potBtn} ${potSelection === 'swing' ? styles.potBtnActive : ''}`}
+                            onClick={() => handlePotSelection('swing')}
+                        >
+                            Swing
+                        </button>
                     </div>
                 </div>
             )}

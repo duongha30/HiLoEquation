@@ -33,7 +33,7 @@ export default (io: Server, socket: Socket) => {
             return;
         }
 
-        if (roomState.round === 1 || roomState.round === 2) {
+        if (roomState.round === 1 || roomState.round === 2 || roomState.round === 3) {
             const playerIds = Object.keys(roomState.hands);
             const withBetting = await Game.startBettingRound(roomCode, playerIds);
             if (withBetting) roomState = withBetting;

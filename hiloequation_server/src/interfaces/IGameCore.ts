@@ -22,6 +22,13 @@ export interface IGameCore {
     finalizeRound(roomId: string): Promise<GameState | undefined>;
     startBettingRound(roomId: string, players: string[]): Promise<GameState | undefined>;
     processBettingAction(roomId: string, playerId: string, action: 'bet' | 'check' | 'fold', amount?: number): Promise<{ state: GameState; roundEnded: boolean } | undefined>;
+    setDeclareDeadline(roomId: string, deadlineAt: number): Promise<GameState | undefined>;
+    runShowdown(roomId: string): Promise<{
+        hiWinner: { playerId: string; result: number; amount: number } | null;
+        loWinner: { playerId: string; result: number; amount: number } | null;
+        revealedHands: Record<string, { cards: CardData[]; potSelection: unknown; hiSubmission: unknown; loSubmission: unknown }>;
+        roomState: GameState;
+    } | undefined>;
 }
 
 export type { BettingRoundState };

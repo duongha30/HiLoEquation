@@ -162,7 +162,7 @@ export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlaye
                 </div>
             )}
 
-            {isPlaying && round === 3 && (
+            {isPlaying && round === 4 && (
                 <div className={styles.potSelectionPanel}>
                     <span className={styles.bettingRoundLabel}>Declare your pot</span>
                     <div className={styles.actions}>

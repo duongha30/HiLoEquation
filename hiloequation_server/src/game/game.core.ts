@@ -1,5 +1,5 @@
 'use strict';
-import { createDeck, drawOnlyNumber, shuffleDeck, encryptCards } from './deck.ts';
+import { createDeck, drawOnlyNumber, shuffleDeck } from './deck.ts';
 import type {
     CardData,
     GameState,
@@ -43,6 +43,9 @@ class GameCore implements IGameCore {
                 score: hand.score,
                 bet: hand.bet,
                 cards: this.cloneCards(hand.cards),
+                potSelection: hand.potSelection,
+                hiSubmission: hand.hiSubmission ? { cards: this.cloneCards(hand.hiSubmission.cards) ?? [], result: hand.hiSubmission.result } : null,
+                loSubmission: hand.loSubmission ? { cards: this.cloneCards(hand.loSubmission.cards) ?? [], result: hand.loSubmission.result } : null,
             };
         }
         return cloned;
@@ -62,6 +65,7 @@ class GameCore implements IGameCore {
                 }
                 : null,
             nextStarterIndex: roomState.nextStarterIndex,
+            declareDeadlineAt: roomState.declareDeadlineAt,
         };
     }
 
@@ -119,6 +123,9 @@ class GameCore implements IGameCore {
                 score: INIT_SCORE,
                 cards: null,
                 bet: INIT_BETTING,
+                potSelection: null,
+                hiSubmission: null,
+                loSubmission: null,
             };
         }
 
@@ -129,6 +136,7 @@ class GameCore implements IGameCore {
             totalBetting: 0,
             bettingRound: null,
             nextStarterIndex: existingState?.nextStarterIndex ?? 0,
+            declareDeadlineAt: null,
         };
         await this.setState(roomCode, newState);
         return this.cloneRoom(newState);
@@ -169,7 +177,10 @@ class GameCore implements IGameCore {
                     cash: playerState.cash,
                     score: playerState.score,
                     bet: playerState.bet,
-                    cards: [...existingCards, ...encryptCards(drawnCards, playerId), ...defaultOps],
+                    cards: [...existingCards, ...drawnCards, ...defaultOps],
+                    potSelection: playerState.potSelection,
+                    hiSubmission: playerState.hiSubmission,
+                    loSubmission: playerState.loSubmission,
                 };
             } else {
                 // Round deal: always draw exactly one number card (unencrypted)
@@ -212,6 +223,9 @@ class GameCore implements IGameCore {
                     score: playerState.score,
                     bet: playerState.bet,
                     cards: [...updatedCards, ...drawnCards],
+                    potSelection: playerState.potSelection,
+                    hiSubmission: playerState.hiSubmission,
+                    loSubmission: playerState.loSubmission,
                 };
             }
         }

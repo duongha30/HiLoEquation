@@ -1,5 +1,6 @@
 'use strict';
 import { createDeck, drawOnlyNumber, shuffleDeck } from './deck.ts';
+import { scanningCard } from './scanningCard.ts';
 import type {
     CardData,
     GameState,
@@ -71,6 +72,17 @@ class GameCore implements IGameCore {
 
     private getRequiredPlayer(roomState: GameState, playerId: string): HandsType[string] | null {
         return roomState.hands[playerId] ?? null;
+    }
+
+    private allActivePlayersComplete(roomState: GameState): boolean {
+        const activePlayers = Object.values(roomState.hands).filter((p) => p.cards !== null);
+        if (activePlayers.length === 0) return false;
+        return activePlayers.every((p) => {
+            if (p.potSelection === 'hi') return p.hiSubmission !== null;
+            if (p.potSelection === 'lo') return p.loSubmission !== null;
+            if (p.potSelection === 'swing') return p.hiSubmission !== null && p.loSubmission !== null;
+            return false;
+        });
     }
 
     async getRoom(roomCode: string): Promise<GameState | undefined> {
@@ -320,6 +332,42 @@ class GameCore implements IGameCore {
         };
         await this.setState(roomCode, nextRoomState);
         return this.cloneRoom(nextRoomState);
+    }
+
+    async submitEquation(roomCode: string, playerId: string, target: 'hi' | 'lo', cards: CardData[]) {
+        const roomState = await this.getState(roomCode);
+        if (!roomState) return undefined;
+        if (roomState.round !== 4) return undefined;
+
+        const playerState = this.getRequiredPlayer(roomState, playerId);
+        if (!playerState || playerState.cards === null) return undefined;
+
+        const ownedIds = playerState.cards.map((c) => c.id).sort();
+        const submittedIds = cards.map((c) => c.id).sort();
+        if (ownedIds.length !== submittedIds.length || ownedIds.some((id, i) => id !== submittedIds[i])) {
+            return undefined;
+        }
+
+        if (playerState.potSelection === 'hi' && target !== 'hi') return undefined;
+        if (playerState.potSelection === 'lo' && target !== 'lo') return undefined;
+        if (playerState.potSelection !== 'hi' && playerState.potSelection !== 'lo' && playerState.potSelection !== 'swing') return undefined;
+
+        const orderedCards = cards.map((submitted) => playerState.cards!.find((owned) => owned.id === submitted.id)!);
+        const { correctedCards, result } = scanningCard(orderedCards);
+
+        const submission = { cards: correctedCards, result };
+        const nextHand = target === 'hi'
+            ? { ...playerState, hiSubmission: submission }
+            : { ...playerState, loSubmission: submission };
+
+        const nextRoomState: GameState = {
+            ...roomState,
+            hands: { ...roomState.hands, [playerId]: nextHand },
+        };
+        await this.setState(roomCode, nextRoomState);
+
+        const allComplete = this.allActivePlayersComplete(nextRoomState);
+        return { state: this.cloneRoom(nextRoomState), allComplete };
     }
 
     async finalizeRound(roomCode: string) {

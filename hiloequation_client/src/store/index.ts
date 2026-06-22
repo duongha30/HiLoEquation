@@ -43,6 +43,7 @@ export {
     setPlayingStatus,
     updateRound,
     setIsForcedBetPhase,
+    setPotSelection,
 } from './reducers/game';
 export {
     leaveRoom,

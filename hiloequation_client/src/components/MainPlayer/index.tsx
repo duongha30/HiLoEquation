@@ -38,8 +38,6 @@ export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlaye
     const isMyTurn = useAppSelector(selectIsMyTurn);
     const isForcedBetPhase = useAppSelector(selectIsForcedBetPhase);
 
-    const minBet = isForcedBetPhase ? MIN_FORCED_BET : 1;
-
     const myContribution = bettingRound?.contributions[playerId ?? ''] ?? 0;
     const callAmount = Math.max(0, currentBet - myContribution);
     const canCheck = isMyTurn && callAmount === 0;
@@ -60,18 +58,13 @@ export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlaye
     };
 
     const handleBetInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const val = Math.max(minBet, Math.min(Number(e.target.value), cash));
+        const val = Math.max(MIN_FORCED_BET, Math.min(Number(e.target.value), cash));
         setBetAmount(val);
     };
 
     const handleBet = (isFirstBet: boolean = false) => {
-        if (betAmount < minBet || betAmount > cash) return;
-        getSocket()?.emit(EMIT_BET_COIN, { roomCode, playerId, betting: betAmount, isFirstBet });
-        setBetAmount(0);
-    };
-
-    const handleFold = () => {
-        getSocket()?.emit(EMIT_FOLD_CARD, { roomCode, playerId });
+        console.log('handleBet')
+        getSocket()?.emit(EMIT_BET_COIN, { roomCode, playerId, betting: MIN_FORCED_BET, isFirstBet });
     };
 
     const handleCheck = () => {
@@ -95,26 +88,23 @@ export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlaye
                     <div className={styles.forcedBetModal}>
                         <h2 className={styles.forcedBetTitle}>First Bet Required</h2>
                         <p className={styles.forcedBetDesc}>
-                            You must place a bet before the next cards are dealt.
+                            You must place a 50 bet before the next cards are dealt.
                             <br />
-                            Minimum: <strong>50 EUR</strong>
+                            BET: <strong>50 EUR</strong>
                         </p>
                         <div className={styles.betControls}>
-                            <button className={styles.btn} onClick={handleDecrease} disabled={betAmount <= minBet}>-</button>
                             <input
                                 type="number"
                                 className={styles.betInput}
-                                value={betAmount}
-                                min={minBet}
+                                value={MIN_FORCED_BET}
+                                min={MIN_FORCED_BET}
                                 max={cash}
                                 onChange={handleBetInput}
                             />
-                            <button className={styles.btn} onClick={handleIncrease} disabled={betAmount >= cash}>+</button>
                         </div>
                         <button
                             className={`${styles.btn} ${styles.betBtn}`}
                             onClick={() => handleBet(true)}
-                            disabled={betAmount < minBet}
                         >
                             Bet
                         </button>

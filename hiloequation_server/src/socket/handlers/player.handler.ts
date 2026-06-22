@@ -8,6 +8,7 @@ export default (io: Server, socket: Socket) => {
         if (!playerId || socket.data.playerId !== playerId) { socket.emit(EMIT_BETTING, { status: ERROR }); return; }
 
         const playerState = await Game.bet(roomCode, playerId, betting, isFirstBet);
+        console.log('ON_BET_COIN playerState', playerState)
         emitHandler({ io, roomCode, eventName: EMIT_BETTING, result: playerState, buildSuccessPayload: (value) => ({ playerState: value, playerId, round: value.round, status: SUCCESS }) });
     });
 

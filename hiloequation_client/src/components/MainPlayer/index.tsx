@@ -161,6 +161,32 @@ export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlaye
                     </div>
                 </div>
             )}
+
+            {isPlaying && round === 3 && (
+                <div className={styles.potSelectionPanel}>
+                    <span className={styles.bettingRoundLabel}>Declare your pot</span>
+                    <div className={styles.actions}>
+                        <button
+                            className={`${styles.btn} ${styles.potBtn} ${potSelection === 'hi' ? styles.potBtnActive : ''}`}
+                            onClick={() => handlePotSelection('hi')}
+                        >
+                            Hi Pot
+                        </button>
+                        <button
+                            className={`${styles.btn} ${styles.potBtn} ${potSelection === 'lo' ? styles.potBtnActive : ''}`}
+                            onClick={() => handlePotSelection('lo')}
+                        >
+                            Lo Pot
+                        </button>
+                        <button
+                            className={`${styles.btn} ${styles.potBtn} ${potSelection === 'swing' ? styles.potBtnActive : ''}`}
+                            onClick={() => handlePotSelection('swing')}
+                        >
+                            Swing
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

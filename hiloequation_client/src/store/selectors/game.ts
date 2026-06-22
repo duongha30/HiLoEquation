@@ -64,7 +64,22 @@ export const selectIsForcedBetPhase = createAppSelector(
     (isForcedBetPhase) => isForcedBetPhase,
 );
 
-export const selectPotSelection = createAppSelector(
-    [(state) => state.gameReducer.potSelection],
-    (potSelection) => potSelection,
+export const selectMyPotSelection = createAppSelector(
+    [(state) => state.gameReducer.hands, (state) => state.userReducer.userId],
+    (hands, userId) => (userId ? hands[userId]?.potSelection ?? null : null),
+);
+
+export const selectRevealedHands = createAppSelector(
+    [(state) => state.gameReducer.revealedHands],
+    (revealedHands) => revealedHands,
+);
+
+export const selectMyRevealedHand = createAppSelector(
+    [(state) => state.gameReducer.revealedHands, (state) => state.userReducer.userId],
+    (revealedHands, userId) => (userId ? revealedHands[userId] ?? null : null),
+);
+
+export const selectDeclareDeadlineAt = createAppSelector(
+    [(state) => state.gameReducer.declareDeadlineAt],
+    (declareDeadlineAt) => declareDeadlineAt,
 );

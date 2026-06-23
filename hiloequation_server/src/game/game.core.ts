@@ -585,8 +585,9 @@ class GameCore implements IGameCore {
 
         for (const playerId in roomState.hands) {
             const hand = roomState.hands[playerId];
+            const arrangedCards = hand.hiSubmission?.cards ?? hand.loSubmission?.cards ?? hand.cards;
             revealedHands[playerId] = {
-                cards: this.cloneCards(hand.cards) ?? [],
+                cards: this.cloneCards(arrangedCards) ?? [],
                 potSelection: hand.potSelection,
                 hiSubmission: hand.hiSubmission,
                 loSubmission: hand.loSubmission,

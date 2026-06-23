@@ -12,6 +12,7 @@ export type CardData = {
   operation?: OperationSymbol;
   encryptedData?: string;
   faceDown?: boolean;
+  hidden?: boolean;
 };
 
 export const DEFAULT_OPERATION_CARDS: CardData[] = [

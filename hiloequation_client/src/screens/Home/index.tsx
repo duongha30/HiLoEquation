@@ -5,6 +5,7 @@ import { Button, CreateJoinModal } from "@/components";
 import { createRoom, joinRoom, selectUserId } from "@/store";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { useConnectSocket } from "@/hooks";
+import { url } from "@/utils/constant";
 import type { RoomDB } from '@/store/types/room';
 
 const DOT_COUNT = 28;
@@ -79,7 +80,7 @@ export const Home = () => {
             <div className={styles.buttonsSection}>
                 <Button text="Create Room" onClick={() => setShowCreateModal(true)} />
                 <Button text="Join Room" onClick={() => setShowJoinModal(true)} />
-                <Button text="test Join Room" onClick={() => navigate(`/room/testId`)} />
+                <Button text="User Guide" onClick={() => navigate(url.userGuide)} />
             </div>
 
             {showJoinModal && (

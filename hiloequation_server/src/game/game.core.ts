@@ -167,7 +167,7 @@ class GameCore implements IGameCore {
         return this.getRoom(roomCode);
     }
 
-    async start(roomCode: string, players: string[]) {
+    async start(roomCode: string, players: string[], cashByPlayer: Record<string, number> = {}) {
         if (players.length === 0) return undefined;
 
         // Preserve existing player cash/score between rounds if state exists
@@ -178,7 +178,7 @@ class GameCore implements IGameCore {
         const hands: HandsType = {};
         for (const player of players) {
             hands[player] = {
-                cash: existingHands[player]?.cash ?? INIT_CASH,
+                cash: cashByPlayer[player] ?? existingHands[player]?.cash ?? INIT_CASH,
                 score: INIT_SCORE,
                 cards: null,
                 bet: INIT_BETTING,

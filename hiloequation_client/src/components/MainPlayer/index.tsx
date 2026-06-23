@@ -10,6 +10,7 @@ import { getSocket } from '@/store/socket/socket';
 import { EMIT_BET_COIN, EMIT_FOLD_CARD, EMIT_PLAYER_ACTION, EMIT_DECLARE_POT, EMIT_SUBMIT_EQUATION } from '@/store/socket/events';
 import { selectMyHand, selectGameRound, selectIsPlaying, selectBettingRound, selectCurrentBet, selectIsMyTurn, setIsForcedBetPhase } from '@/store';
 import { selectIsForcedBetPhase, selectMyPotSelection, selectMyRevealedHand } from '@/store/selectors/game';
+import { scanningCard } from '@/utils/scanningCard';
 
 const BET_STEP = 10;
 const MIN_FORCED_BET = 50;
@@ -43,6 +44,8 @@ export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlaye
     const myContribution = bettingRound?.contributions[playerId ?? ''] ?? 0;
     const callAmount = Math.max(0, currentBet - myContribution);
     const canCheck = isMyTurn && callAmount === 0;
+
+    const scan = useMemo(() => scanningCard(cards), [cards]);
 
     const nextConfirmTarget = useMemo((): 'hi' | 'lo' | null => {
         if (!myPotSelection) return null;
@@ -97,7 +100,7 @@ export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlaye
     };
 
     const handleConfirmEquation = () => {
-        if (!nextConfirmTarget) return;
+        if (!nextConfirmTarget || !scan.isValid) return;
         getSocket()?.emit(EMIT_SUBMIT_EQUATION, { roomCode, playerId, target: nextConfirmTarget, cards });
     };
 
@@ -199,14 +202,21 @@ export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlaye
                     </div>
 
                     {myPotSelection && nextConfirmTarget && (
-                        <div className={styles.actions}>
-                            <span className={styles.bettingRoundLabel}>
-                                Arrange your cards{myPotSelection === 'swing' ? ` for ${nextConfirmTarget === 'hi' ? 'Hi' : 'Lo'} Pot` : ''}
+                        <>
+                            <span className={`${styles.validityLabel} ${scan.isValid ? styles.validityValid : styles.validityInvalid}`}>
+                                {scan.isValid
+                                    ? `✓ Equation = ${scan.result}`
+                                    : '⚠ Invalid arrangement — numbers can\'t be adjacent. Rearrange your cards.'}
                             </span>
-                            <button className={`${styles.btn} ${styles.betBtn}`} onClick={handleConfirmEquation}>
-                                Confirm Equation{myPotSelection === 'swing' ? ` (${nextConfirmTarget === 'hi' ? '1/2' : '2/2'})` : ''}
-                            </button>
-                        </div>
+                            <div className={styles.actions}>
+                                <span className={styles.bettingRoundLabel}>
+                                    Arrange your cards{myPotSelection === 'swing' ? ` for ${nextConfirmTarget === 'hi' ? 'Hi' : 'Lo'} Pot` : ''}
+                                </span>
+                                <button className={`${styles.btn} ${styles.betBtn}`} onClick={handleConfirmEquation} disabled={!scan.isValid}>
+                                    Confirm Equation{myPotSelection === 'swing' ? ` (${nextConfirmTarget === 'hi' ? '1/2' : '2/2'})` : ''}
+                                </button>
+                            </div>
+                        </>
                     )}
 
                     {myPotSelection && !nextConfirmTarget && (

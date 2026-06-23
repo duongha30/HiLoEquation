@@ -1,7 +1,12 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { CardData } from '@/types/card';
-import type { PotSelection, Submission, RevealedHands } from '@/types/game';
+import type { PotSelection, Submission, RevealedHands, ShowdownWinner } from '@/types/game';
+
+export type ShowdownResult = {
+    hiWinner: ShowdownWinner;
+    loWinner: ShowdownWinner;
+};
 
 export type HandSnapshot = {
     cash: number;
@@ -36,6 +41,7 @@ export type GameState = ServerRoomState & {
     isForcedBetPhase: boolean;
     revealedHands: RevealedHands;
     declareDeadlineAt: number | null;
+    showdownResult: ShowdownResult | null;
 };
 
 const initialState: GameState = {
@@ -48,6 +54,7 @@ const initialState: GameState = {
     isForcedBetPhase: false,
     revealedHands: {},
     declareDeadlineAt: null,
+    showdownResult: null,
 };
 
 const gameSlice = createSlice({
@@ -62,6 +69,7 @@ const gameSlice = createSlice({
             if (action.payload.round === 0) {
                 state.revealedHands = {};
                 state.declareDeadlineAt = null;
+                state.showdownResult = null;
             }
         },
         setGameStateWithoutCards: (state, action: PayloadAction<ServerRoomState>) => {
@@ -94,6 +102,9 @@ const gameSlice = createSlice({
         setDeclareDeadlineAt: (state, action: PayloadAction<number | null>) => {
             state.declareDeadlineAt = action.payload;
         },
+        setShowdownResult: (state, action: PayloadAction<ShowdownResult | null>) => {
+            state.showdownResult = action.payload;
+        },
         setPlayingStatus: (state, action: PayloadAction<boolean>) => {
             state.isPlaying = action.payload;
         },
@@ -111,5 +122,6 @@ export const {
     setIsForcedBetPhase,
     setRevealedHands,
     setDeclareDeadlineAt,
+    setShowdownResult,
 } = gameSlice.actions;
 export default gameSlice.reducer;

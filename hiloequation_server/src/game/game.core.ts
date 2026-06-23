@@ -177,8 +177,8 @@ class GameCore implements IGameCore {
         const initDeck = shuffleDeck(createDeck());
         const hands: HandsType = {};
         for (const player of players) {
-            hands[player] = existingHands[player] ?? {
-                cash: INIT_CASH,
+            hands[player] = {
+                cash: existingHands[player]?.cash ?? INIT_CASH,
                 score: INIT_SCORE,
                 cards: null,
                 bet: INIT_BETTING,

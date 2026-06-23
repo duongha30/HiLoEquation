@@ -172,3 +172,17 @@
 .potBtnActive:hover:not(:disabled) {
     background: #b8973f;
 }
+
+.validityLabel {
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+}
+
+.validityValid {
+    color: #4ade80;
+}
+
+.validityInvalid {
+    color: #f87171;
+}

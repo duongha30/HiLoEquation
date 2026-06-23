@@ -36,6 +36,7 @@ export {
     selectRevealedHands,
     selectMyRevealedHand,
     selectDeclareDeadlineAt,
+    selectShowdownResult,
 } from './selectors/game';
 
 // ------ Reducers ------
@@ -50,6 +51,7 @@ export {
     setIsForcedBetPhase,
     setRevealedHands,
     setDeclareDeadlineAt,
+    setShowdownResult,
 } from './reducers/game';
 export {
     leaveRoom,

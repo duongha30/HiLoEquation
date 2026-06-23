@@ -83,3 +83,8 @@ export const selectDeclareDeadlineAt = createAppSelector(
     [(state) => state.gameReducer.declareDeadlineAt],
     (declareDeadlineAt) => declareDeadlineAt,
 );
+
+export const selectShowdownResult = createAppSelector(
+    [(state) => state.gameReducer.showdownResult],
+    (showdownResult) => showdownResult,
+);

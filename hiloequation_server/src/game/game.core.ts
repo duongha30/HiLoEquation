@@ -227,6 +227,12 @@ class GameCore implements IGameCore {
                     drawnCards.push(result.card);
                 }
 
+                // Mark the first dealt number card as the hidden "hole card" — kept face-down
+                // to opponents (encrypted on the wire) until showdown.
+                if (drawnCards.length > 0) {
+                    drawnCards[0] = { ...drawnCards[0], hidden: true };
+                }
+
                 const shouldAddDefaultOps = existingCards.length === 0;
                 const defaultOps = shouldAddDefaultOps
                     ? DEFAULT_OPERATION_CARDS.map((c) => ({ ...c }))

@@ -4,15 +4,18 @@ import config from '../../config/config.json'
 let socket: Socket | null = null;
 const socketURL = config.SOCKET_URL;
 
-export const connectSocket = async (): Promise<Socket> => {
+export const connectSocket = async (userId: string): Promise<Socket> => {
     if (!socket) {
         socket = io(socketURL, {
             withCredentials: true, // Enable cookies to be sent with socket requests
+            extraHeaders: {
+                "x-client-id": userId
+            }
         });
 
         await new Promise((resolve, reject) => {
             socket?.on('connect', () => {
-                console.log('Socket connected:', socket?.id);
+                console.log('Socket connected');
                 resolve(true);
             });
             socket?.on('connect_error', (err) => {
@@ -22,7 +25,6 @@ export const connectSocket = async (): Promise<Socket> => {
         });
 
         socket.on('disconnect', (reason) => {
-            console.log('Socket disconnected:', reason);
             socket = null; // reset socket on disconnect
         });
     }

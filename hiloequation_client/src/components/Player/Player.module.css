@@ -4,17 +4,26 @@
     align-items: center;
     justify-content: center;
     gap: 0.35rem;
+    position: relative;
 }
 
 .playerName {
-    font-size: 0.8rem;
+    font-size: 1.2rem;
     font-weight: 700;
-    color: #fff;
+    color: #000;
     letter-spacing: 0.03em;
     max-width: 10rem;
+    max-height: 2rem;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    padding: 3px;
+    background-color: #c9a84c;
+    border-radius: 10%;
+    position: absolute;
+    top: -45px;
+    left: 0;
+    z-index: 100;
 }
 
 .cardsGroup {
@@ -22,15 +31,23 @@
     flex-direction: row;
 }
 
-.cardWrapper + .cardWrapper {
-    margin-left: -4vw; /* ~50% overlap of the 8vw card */
+.cardWrapper+.cardWrapper {
+    margin-left: -4vw;
+    /* ~50% overlap of the 8vw card */
 }
 
-.rotateLeft  { transform: rotate(90deg); }
-.rotateTop   { transform: rotate(180deg); }
-.rotateRight { transform: rotate(-90deg); }
+.rotateLeft {
+    transform: rotate(90deg);
+}
+
+.rotateTop {
+    transform: rotate(180deg);
+}
+
+.rotateRight {
+    transform: rotate(-90deg);
+}
 
 .activeTurn {
-    outline: 2px solid #c9a84c;
-    border-radius: 0.5rem;
+    background-color: #46f30c;
 }

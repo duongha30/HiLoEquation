@@ -57,7 +57,7 @@ export default (io: Server, socket: Socket) => {
                 status: SUCCESS, roomState: {
                     round: value.round,
                     totalBetting: value.totalBetting,
-                    hands: value.hands,
+                    hands: buildWireHands(value.hands),
                     bettingRound: value.bettingRound,
                 }
             })

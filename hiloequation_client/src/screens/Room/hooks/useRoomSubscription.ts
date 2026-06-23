@@ -1,9 +1,9 @@
 import { selectIsSocketConnected, selectUserId, setGameState, setPlayingStatus, setGameStateWithoutCards } from "@/store";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { updatePlayersInRoom } from "@/store/reducers/room";
-import { setIsForcedBetPhase, setRevealedHands, setDeclareDeadlineAt, setShowdownResult, updateHand, updateRound } from "@/store/reducers/game";
+import { updatePlayersInRoom, removePlayerFromRoom } from "@/store/reducers/room";
+import { setIsForcedBetPhase, setRevealedHands, setDeclareDeadlineAt, setShowdownResult, updateHand, updateRound, removeHand } from "@/store/reducers/game";
 import {
-    ON_BETTING, ON_CARD_DEAL, ON_FOLDING, ON_PLAYER_JOIN, ON_PLAYER_READY, ON_START, ON_PLAYER_ACTION, ON_BETTING_ROUND_END,
+    ON_BETTING, ON_CARD_DEAL, ON_FOLDING, ON_PLAYER_JOIN, ON_PLAYER_LEAVE, ON_PLAYER_READY, ON_START, ON_PLAYER_ACTION, ON_BETTING_ROUND_END,
     ON_DECLARE_POT, ON_SUBMIT_EQUATION, ON_DECLARE_PHASE_START, ON_SHOWDOWN_RESULT,
 } from "@/store/socket/events";
 import { getSocket } from "@/store/socket/socket";
@@ -128,7 +128,14 @@ export const useRoomSubscription = () => {
             resetReady();
         };
 
+        const onPlayerLeave = (data: { status: number; playerId?: string }) => {
+            if (data.status !== 200 || !data.playerId) return;
+            dispatch(removePlayerFromRoom({ playerId: data.playerId }));
+            dispatch(removeHand({ playerId: data.playerId }));
+        };
+
         socket.on(ON_PLAYER_JOIN, onPlayerJoin);
+        socket.on(ON_PLAYER_LEAVE, onPlayerLeave);
         socket.on(ON_PLAYER_READY, onPlayerReady);
         socket.on(ON_START, onStartGame);
         socket.on(ON_CARD_DEAL, onDealCard);
@@ -143,6 +150,7 @@ export const useRoomSubscription = () => {
 
         return () => {
             socket.off(ON_PLAYER_JOIN, onPlayerJoin);
+            socket.off(ON_PLAYER_LEAVE, onPlayerLeave);
             socket.off(ON_PLAYER_READY, onPlayerReady);
             socket.off(ON_START, onStartGame);
             socket.off(ON_CARD_DEAL, onDealCard);

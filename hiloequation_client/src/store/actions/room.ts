@@ -49,7 +49,6 @@ export const createRoom = createAppAsyncThunk(
                 const onJoin = (response: SocketPlayerJoin) => {
                     clearTimeout(timeoutId);
                     socket.off(SOCKET_ERROR, onError);
-                    console.log('Room created successfully:', response.status);
                     resolve(metadata);
                 };
 
@@ -106,7 +105,6 @@ export const joinRoom = createAppAsyncThunk(
                 const onJoin = (response: SocketPlayerJoin) => {
                     clearTimeout(timeoutId);
                     socket.off(SOCKET_ERROR, onError);
-                    console.log('Room joined successfully:', response.status);
                     const res = { ...metadata, playerId: response.playerId, players: response.players, playerNames: response.playerNames };
                     resolve(res);
                 };
@@ -130,7 +128,6 @@ export const joinRoom = createAppAsyncThunk(
             if (err instanceof DOMException && err.name === 'AbortError') {
                 throw err;
             }
-            console.log('joinRoom error: ', err)
             return thunkAPI.rejectWithValue((err as Error).message);
         }
     },

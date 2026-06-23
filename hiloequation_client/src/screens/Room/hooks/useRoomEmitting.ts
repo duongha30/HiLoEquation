@@ -17,18 +17,12 @@ export const useRoomEmitting = () => {
         players.length > 0 && players.every((id) => (allHands[id]?.bet ?? 0) > 0);
 
     useEffect(() => {
-        console.log('...round', round)
-    }, [round])
-
-    useEffect(() => {
-        console.log('round 1', round)
         if (isHost && isPlaying && round === 1) {
             getSocket()?.emit(EMIT_DEAL_CARD, { roomCode, players, times: 1, isFirstDraw: false });
         }
     }, [isHost, round, isPlaying, roomCode, players]);
 
     useEffect(() => {
-        console.log('round 2 & 3', round)
         if (round > 1 && round < 4) {
             if (isHost && isPlaying && allPlayersHaveBet) {
                 getSocket()?.emit(EMIT_DEAL_CARD, { roomCode, players, times: 1, isFirstDraw: false });

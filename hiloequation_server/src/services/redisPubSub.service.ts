@@ -42,7 +42,6 @@ class RedisPubSubService implements IRedisPubSubService {
             const announcement = { message: message.message, playerId: message.playerId, players };
             const payload = JSON.stringify(announcement);
             const numReceivers = await this.publisher.publish(channel, payload);
-            console.log(`Message published to ${channel}. Receivers: ${numReceivers}`);
             return announcement;
         } catch (error) {
             console.error('Error publishing message:', error);
@@ -54,7 +53,6 @@ class RedisPubSubService implements IRedisPubSubService {
         const channel = `room:${roomCode}`;
         await this.subscriber.subscribe(channel, async (message: string, receivedChannel: string) => {
             try {
-                console.log(`Subscribing to channel: ${channel}`);
                 const parsedMessage = JSON.parse(message);
                 callback(receivedChannel, parsedMessage);
             } catch (err) {
@@ -69,7 +67,6 @@ class RedisPubSubService implements IRedisPubSubService {
             const channel = `room:${roomCode}`;
             await this.removePlayerFromChannel(channel, playerId);
             await this.subscriber.unsubscribe(channel);
-            console.log(`Unsubscribed from channel: ${channel}`);
         } catch (error) {
             console.error('Error in unsubscribe channel:', error);
         }

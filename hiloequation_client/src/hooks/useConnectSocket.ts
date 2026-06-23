@@ -1,4 +1,4 @@
-import { disconnectSocketReducer, selectIsSocketConnected, connectSocketThunk, leaveRoom, resetGame, selectUserId, selectRoomCode } from "@/store";
+import { disconnectSocketReducer, selectIsSocketConnected, connectSocketThunk, leaveRoom, resetGame } from "@/store";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { EMIT_LEAVE_ROOM } from "@/store/socket/events";
 import { disconnectSocket, getSocket } from "@/store/socket/socket";
@@ -10,7 +10,6 @@ export const useConnectSocket = () => {
 
     useEffect(() => {
         const connectSocket = async () => {
-            console.log('connect socket')
             await dispatch(connectSocketThunk());
         }
         connectSocket();
@@ -22,7 +21,6 @@ export const useDisconnectSocket = () => {
 
     useEffect(() => {
         return () => {
-            console.log('first')
             disconnectSocket();
             dispatch(disconnectSocketReducer());
             dispatch(resetGame());

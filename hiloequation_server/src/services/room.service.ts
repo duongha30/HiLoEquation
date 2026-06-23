@@ -68,7 +68,6 @@ class RoomService {
         if (!dbRoom) throw new BadRequestError({ message: 'Room not found' });
 
         await redisPubSubService.subscribe(roomCode, (ch: string, message: unknown) => {
-            console.log(`Room[${ch}] has new player joined: `, message);
             if (onRoomEvent) onRoomEvent(message);
         });
 

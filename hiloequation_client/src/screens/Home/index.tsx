@@ -23,7 +23,6 @@ export const Home = () => {
 
     const handleJoinRoom = async (password: string, roomCode: string) => {
         const data = await dispatch(joinRoom({ roomCode, playerId: userId, password: password }));
-        console.log('data', data)
         if ((data?.payload as RoomDB)?.roomCode) {
             navigate(`/room/${roomCode}`);
             setShowJoinModal(false);
@@ -37,7 +36,6 @@ export const Home = () => {
             hostId: userId,
             maxPlayers: 4
         }));
-        console.log('data', data)
         if ((data?.payload as RoomDB)?.roomCode) {
             navigate(`/room/${(data.payload as RoomDB).roomCode}`);
             setShowCreateModal(false);

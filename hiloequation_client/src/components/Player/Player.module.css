@@ -42,6 +42,7 @@
 
 .rotateTop {
     transform: rotate(180deg);
+    margin-top: 100px;
 }
 
 .rotateRight {

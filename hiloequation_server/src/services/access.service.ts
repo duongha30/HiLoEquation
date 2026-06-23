@@ -8,7 +8,6 @@ import type { Response } from 'express';
 
 class AccessService {
     static async logout({ keyStore }: { keyStore: { _id: unknown } }): Promise<unknown> {
-        console.log('keyStore', keyStore);
         return await KeyTokenService.removeKeyById(keyStore._id as string);
     }
 

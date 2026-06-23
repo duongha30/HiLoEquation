@@ -177,8 +177,8 @@ class GameCore implements IGameCore {
         const initDeck = shuffleDeck(createDeck());
         const hands: HandsType = {};
         for (const player of players) {
-            hands[player] = existingHands[player] ?? {
-                cash: INIT_CASH,
+            hands[player] = {
+                cash: existingHands[player]?.cash ?? INIT_CASH,
                 score: INIT_SCORE,
                 cards: null,
                 bet: INIT_BETTING,
@@ -577,16 +577,33 @@ class GameCore implements IGameCore {
         const hiWinnerId = this.pickWinner(hiCandidates, 20);
         const loWinnerId = this.pickWinner(loCandidates, 1);
 
-        const hiPotAmount = Math.floor(roomState.totalBetting / 2);
-        const loPotAmount = roomState.totalBetting - hiPotAmount;
+        const activeSelections = Object.values(roomState.hands)
+            .filter((h) => h.cards !== null)
+            .map((h) => h.potSelection);
+        const allHi = activeSelections.length > 0 && activeSelections.every((s) => s === 'hi');
+        const allLo = activeSelections.length > 0 && activeSelections.every((s) => s === 'lo');
+
+        let hiPotAmount: number;
+        let loPotAmount: number;
+        if (allHi) {
+            hiPotAmount = roomState.totalBetting;
+            loPotAmount = 0;
+        } else if (allLo) {
+            hiPotAmount = 0;
+            loPotAmount = roomState.totalBetting;
+        } else {
+            hiPotAmount = Math.floor(roomState.totalBetting / 2);
+            loPotAmount = roomState.totalBetting - hiPotAmount;
+        }
 
         const revealedHands: Record<string, { cards: CardData[]; potSelection: HandsType[string]['potSelection']; hiSubmission: HandsType[string]['hiSubmission']; loSubmission: HandsType[string]['loSubmission'] }> = {};
         const nextHands: HandsType = {};
 
         for (const playerId in roomState.hands) {
             const hand = roomState.hands[playerId];
+            const arrangedCards = hand.hiSubmission?.cards ?? hand.loSubmission?.cards ?? hand.cards;
             revealedHands[playerId] = {
-                cards: this.cloneCards(hand.cards) ?? [],
+                cards: this.cloneCards(arrangedCards) ?? [],
                 potSelection: hand.potSelection,
                 hiSubmission: hand.hiSubmission,
                 loSubmission: hand.loSubmission,

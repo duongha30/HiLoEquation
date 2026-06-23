@@ -7,6 +7,7 @@ interface RoomState {
 
     setCardTranslates: (translates: Record<string, number>) => void;
     setPlayerReady: (playerId: string, isReady: boolean) => void;
+    resetReady: () => void;
 }
 
 export const useRoomStore = create<RoomState>((set) => ({
@@ -20,4 +21,5 @@ export const useRoomStore = create<RoomState>((set) => ({
                 ? [...new Set([...state.readyPlayers, playerId])]
                 : state.readyPlayers.filter((id) => id !== playerId),
         })),
+    resetReady: () => set({ readyPlayers: [] }),
 }))

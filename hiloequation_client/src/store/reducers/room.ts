@@ -8,10 +8,11 @@ const roomAdapter = createEntityAdapter<Room, string>({
     selectId: room => room.roomId,
 });
 
-const initialState = roomAdapter.getInitialState<{ status: string, id: string, players: string[], hostId: string, maxPlayers: number, roomCode: string }>({
+const initialState = roomAdapter.getInitialState<{ status: string, id: string, players: string[], playerNames: Record<string, string>, hostId: string, maxPlayers: number, roomCode: string }>({
     status: 'idle',
     id: '',
     players: [],
+    playerNames: {},
     hostId: '',
     maxPlayers: 0,
     roomCode: '',
@@ -29,6 +30,10 @@ const roomSlice = createSlice({
             const players = action?.payload?.players;
             if (players.length > 0) {
                 state.players = players;
+            }
+            const playerNames = action?.payload?.playerNames;
+            if (playerNames) {
+                state.playerNames = { ...state.playerNames, ...playerNames };
             }
         },
         removePlayerFromRoom: (state, action) => {

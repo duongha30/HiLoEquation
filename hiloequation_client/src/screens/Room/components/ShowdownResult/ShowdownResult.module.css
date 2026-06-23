@@ -1,0 +1,53 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.25rem;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(201, 168, 76, 0.5);
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 10px;
+    min-width: 16rem;
+}
+
+.title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #ffd54f;
+    text-align: center;
+    margin-bottom: 0.15rem;
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: #fff;
+    opacity: 0.85;
+}
+
+.winnerRow {
+    opacity: 1;
+    font-weight: 700;
+    color: #ffd54f;
+}
+
+.name {
+    flex: 0 0 6rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.result {
+    flex: 1;
+}
+
+.win {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}

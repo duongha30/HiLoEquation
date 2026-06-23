@@ -18,7 +18,8 @@ export {
     selectAllGuess,
     isHostPlayer,
     selectRoomCode,
-    selectAllPlayers
+    selectAllPlayers,
+    selectPlayerNames
 } from './selectors/room';
 export {
     selectAllHands,
@@ -36,6 +37,7 @@ export {
     selectRevealedHands,
     selectMyRevealedHand,
     selectDeclareDeadlineAt,
+    selectShowdownResult,
 } from './selectors/game';
 
 // ------ Reducers ------
@@ -50,6 +52,7 @@ export {
     setIsForcedBetPhase,
     setRevealedHands,
     setDeclareDeadlineAt,
+    setShowdownResult,
 } from './reducers/game';
 export {
     leaveRoom,

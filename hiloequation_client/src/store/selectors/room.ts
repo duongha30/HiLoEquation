@@ -15,6 +15,11 @@ export const selectAllPlayers = createAppSelector(
     (roomReducer) => roomReducer.players,
 );
 
+export const selectPlayerNames = createAppSelector(
+    [(state) => state.roomReducer.playerNames],
+    (playerNames) => playerNames ?? {},
+);
+
 export const selectAllGuess = createAppSelector(
     [(state) => state.roomReducer.players, (state) => state.userReducer.userId],
     (players, userId) => players?.filter((id) => id !== userId) ?? [],

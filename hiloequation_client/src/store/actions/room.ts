@@ -96,7 +96,7 @@ export const joinRoom = createAppAsyncThunk(
                 throw new Error('Invalid room metadata');
             }
 
-            return new Promise<RoomDB & { playerId: string, players: string[] }>((resolve, reject) => {
+            return new Promise<RoomDB & { playerId: string, players: string[], playerNames?: Record<string, string> }>((resolve, reject) => {
                 socket.emit(EMIT_JOIN_ROOM, {
                     roomCode,
                     playerId,
@@ -107,7 +107,7 @@ export const joinRoom = createAppAsyncThunk(
                     clearTimeout(timeoutId);
                     socket.off(SOCKET_ERROR, onError);
                     console.log('Room joined successfully:', response.status);
-                    const res = { ...metadata, playerId: response.playerId, players: response.players };
+                    const res = { ...metadata, playerId: response.playerId, players: response.players, playerNames: response.playerNames };
                     resolve(res);
                 };
 
@@ -186,12 +186,15 @@ export const joinRoomCases: AppAsyncThunkActionCases<
     fulfilled: (state, action) => {
         state.status = 'idle';
         if (action.payload) {
-            const { _id, roomCode, hostId, maxPlayers, players } = action.payload;
+            const { _id, roomCode, hostId, maxPlayers, players, playerNames } = action.payload;
             state.id = _id;
             state.roomCode = roomCode;
             state.hostId = hostId;
             state.maxPlayers = maxPlayers;
             state.players = [...players];
+            if (playerNames) {
+                state.playerNames = { ...state.playerNames, ...playerNames };
+            }
         }
     },
     rejected: (state) => {

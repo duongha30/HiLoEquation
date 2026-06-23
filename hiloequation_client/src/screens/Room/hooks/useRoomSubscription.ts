@@ -1,7 +1,7 @@
 import { selectIsSocketConnected, selectUserId, setGameState, setPlayingStatus, setGameStateWithoutCards } from "@/store";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { updatePlayersInRoom } from "@/store/reducers/room";
-import { setIsForcedBetPhase, setRevealedHands, setDeclareDeadlineAt, updateHand, updateRound } from "@/store/reducers/game";
+import { setIsForcedBetPhase, setRevealedHands, setDeclareDeadlineAt, setShowdownResult, updateHand, updateRound } from "@/store/reducers/game";
 import {
     ON_BETTING, ON_CARD_DEAL, ON_FOLDING, ON_PLAYER_JOIN, ON_PLAYER_READY, ON_START, ON_PLAYER_ACTION, ON_BETTING_ROUND_END,
     ON_DECLARE_POT, ON_SUBMIT_EQUATION, ON_DECLARE_PHASE_START, ON_SHOWDOWN_RESULT,
@@ -9,17 +9,18 @@ import {
 import { getSocket } from "@/store/socket/socket";
 import { useRoomStore } from "../roomStore";
 import type { ServerRoomState } from '@/store/reducers/game';
-import type { RevealedHands } from "@/types/game";
+import type { RevealedHands, ShowdownWinner } from "@/types/game";
 import { useEffect } from 'react';
 import { decryptCards } from "@/utils/card";
 
-type PlayerJoinSocketEvent = { status: number; players?: string[] };
+type PlayerJoinSocketEvent = { status: number; players?: string[]; playerNames?: Record<string, string> };
 type StartGameSocketEvent = { status: number; roomState: ServerRoomState };
 
 export const useRoomSubscription = () => {
     const dispatch = useAppDispatch();
     const isConnected = useAppSelector(selectIsSocketConnected);
     const setPlayerReady = useRoomStore((s) => s.setPlayerReady);
+    const resetReady = useRoomStore((s) => s.resetReady);
     const playerId = useAppSelector(selectUserId);
 
     useEffect(() => {
@@ -35,7 +36,7 @@ export const useRoomSubscription = () => {
                 return;
             }
             if (data?.players) {
-                dispatch(updatePlayersInRoom({ players: data.players }));
+                dispatch(updatePlayersInRoom({ players: data.players, playerNames: data.playerNames }));
             }
         };
 
@@ -116,10 +117,15 @@ export const useRoomSubscription = () => {
             dispatch(setGameStateWithoutCards(data.roomState));
         };
 
-        const onShowdownResult = (data: { status: number; revealedHands?: RevealedHands; roomState?: any }) => {
+        const onShowdownResult = (data: { status: number; hiWinner?: ShowdownWinner; loWinner?: ShowdownWinner; revealedHands?: RevealedHands; roomState?: any }) => {
             if (data.status !== 200) return;
             if (data.revealedHands) dispatch(setRevealedHands(data.revealedHands));
             if (data.roomState) dispatch(setGameStateWithoutCards(data.roomState));
+            dispatch(setShowdownResult({ hiWinner: data.hiWinner ?? null, loWinner: data.loWinner ?? null }));
+            // Clear the lingering declare timer and drop back to the lobby so Ready/Start reappear.
+            dispatch(setDeclareDeadlineAt(null));
+            dispatch(setPlayingStatus(false));
+            resetReady();
         };
 
         socket.on(ON_PLAYER_JOIN, onPlayerJoin);
@@ -149,5 +155,5 @@ export const useRoomSubscription = () => {
             socket.off(ON_SUBMIT_EQUATION, onEquationSubmitted);
             socket.off(ON_SHOWDOWN_RESULT, onShowdownResult);
         };
-    }, [isConnected, setPlayerReady, dispatch, playerId]);
+    }, [isConnected, setPlayerReady, resetReady, dispatch, playerId]);
 };

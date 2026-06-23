@@ -8,7 +8,7 @@ import { useRoomStore } from './roomStore';
 import { useAppSelector } from '@/store/hooks';
 import { selectAllGuess, selectMyHand } from '@/store';
 import { selectMyRevealedHand } from '@/store/selectors/game';
-import { StartReadyButton, BettingDisplay, DeclareTimer } from './components/';
+import { StartReadyButton, BettingDisplay, DeclareTimer, ShowdownResult } from './components/';
 import { useRoomEmitting } from './hooks/useRoomEmitting';
 
 export const Room = () => {
@@ -49,6 +49,7 @@ export const Room = () => {
     >
       <div className={styles.container}>
         <div className={styles.deckSection}>
+          <ShowdownResult />
           <StartReadyButton />
           <BettingDisplay />
           <DeclareTimer />

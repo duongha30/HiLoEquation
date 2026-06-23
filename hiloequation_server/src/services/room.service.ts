@@ -1,6 +1,7 @@
 import { BadRequestError, NotFoundError, UnauthorizedError } from '../core/error.response';
 import bcrypt from 'bcrypt';
 import RoomModel from '../models/Room.model';
+import PlayerModel from '../models/Player.model';
 import { getInfoData } from '../utils';
 import redisPubSubService from './redisPubSub.service';
 import { v4 } from 'uuid';
@@ -73,7 +74,20 @@ class RoomService {
 
         const channel = `room:${roomCode}`;
         await redisPubSubService.addPlayerToChannel(channel, playerId);
-        return await redisPubSubService.getPlayersInChannel(channel);
+        const players = await redisPubSubService.getPlayersInChannel(channel);
+        const playerNames = await RoomService.getPlayerNames(players);
+        return { players, playerNames };
+    }
+
+    static async getPlayerNames(playerIds: string[]): Promise<Record<string, string>> {
+        if (!playerIds || playerIds.length === 0) return {};
+        const validIds = playerIds.filter((id) => Types.ObjectId.isValid(id));
+        const players = await PlayerModel.find({ _id: { $in: validIds } }, { _id: 1, name: 1 }).lean();
+        const playerNames: Record<string, string> = {};
+        for (const player of players) {
+            playerNames[String(player._id)] = player.name as string;
+        }
+        return playerNames;
     }
 
     static async leaveRoomSocket({ roomCode, playerId }: { roomCode: string; playerId: string }) {

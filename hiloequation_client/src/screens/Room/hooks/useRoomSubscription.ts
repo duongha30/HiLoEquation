@@ -13,7 +13,7 @@ import type { RevealedHands, ShowdownWinner } from "@/types/game";
 import { useEffect } from 'react';
 import { decryptCards } from "@/utils/card";
 
-type PlayerJoinSocketEvent = { status: number; players?: string[] };
+type PlayerJoinSocketEvent = { status: number; players?: string[]; playerNames?: Record<string, string> };
 type StartGameSocketEvent = { status: number; roomState: ServerRoomState };
 
 export const useRoomSubscription = () => {
@@ -36,7 +36,7 @@ export const useRoomSubscription = () => {
                 return;
             }
             if (data?.players) {
-                dispatch(updatePlayersInRoom({ players: data.players }));
+                dispatch(updatePlayersInRoom({ players: data.players, playerNames: data.playerNames }));
             }
         };
 

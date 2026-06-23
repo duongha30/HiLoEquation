@@ -18,7 +18,8 @@ export {
     selectAllGuess,
     isHostPlayer,
     selectRoomCode,
-    selectAllPlayers
+    selectAllPlayers,
+    selectPlayerNames
 } from './selectors/room';
 export {
     selectAllHands,

@@ -3,4 +3,5 @@ export type SocketPlayerJoin = {
     status: string;
     message: string;
     players: string[];
+    playerNames?: Record<string, string>;
 }

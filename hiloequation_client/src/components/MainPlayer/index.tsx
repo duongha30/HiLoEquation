@@ -4,8 +4,9 @@ import { Card } from '@/components';
 import type { CardData } from '@/types/card';
 import { useEffect, useMemo, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { selectUserId } from '@/store/selectors/user';
+import { selectUserId, selectUserInfo } from '@/store/selectors/user';
 import { selectRoomCode } from '@/store/selectors/room';
+import { selectPlayerNames } from '@/store';
 import { getSocket } from '@/store/socket/socket';
 import { EMIT_BET_COIN, EMIT_FOLD_CARD, EMIT_PLAYER_ACTION, EMIT_DECLARE_POT, EMIT_SUBMIT_EQUATION } from '@/store/socket/events';
 import { selectMyHand, selectGameRound, selectIsPlaying, selectBettingRound, selectCurrentBet, selectIsMyTurn, setIsForcedBetPhase } from '@/store';
@@ -41,6 +42,9 @@ export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlaye
     const isForcedBetPhase = useAppSelector(selectIsForcedBetPhase);
     const myPotSelection = useAppSelector(selectMyPotSelection);
     const myRevealedHand = useAppSelector(selectMyRevealedHand);
+    const playerNames = useAppSelector(selectPlayerNames);
+    const userInfo = useAppSelector(selectUserInfo);
+    const displayName = playerNames[playerId ?? ''] ?? userInfo.name ?? (playerId ?? '').slice(0, 8);
 
     const myContribution = bettingRound?.contributions[playerId ?? ''] ?? 0;
     const callAmount = Math.max(0, currentBet - myContribution);
@@ -56,6 +60,10 @@ export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlaye
         if (!myHand?.loSubmission) return 'lo';
         return null;
     }, [myPotSelection, myHand?.hiSubmission, myHand?.loSubmission]);
+
+    // Lock the card layout once the player has confirmed their equation in round 4,
+    // keeping it fixed through showdown until a new hand resets to round 0.
+    const cardsLocked = round === 4 && (!!myRevealedHand || (myPotSelection !== null && nextConfirmTarget === null));
 
     useEffect(() => {
         if (isPlaying && round === 0 && (myHand?.bet ?? 0) === 0) {
@@ -138,11 +146,14 @@ export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlaye
                 </div>
             )}
 
-            <div className={styles.cashDisplay}>{cash} EUR</div>
+            <div className={styles.playerHeader}>
+                <span className={styles.playerName}>{displayName}</span>
+                <span className={styles.cashDisplay}>{cash} EUR</span>
+            </div>
 
             <div className={styles.cardArea}>
                 {cards.map((card) => (
-                    <Card key={card.id} card={card} faceDown={card.faceDown ?? false} droppable draggable onMount={onCardMount} translateX={cardTranslates?.[card.id]} />
+                    <Card key={card.id} card={card} faceDown={card.faceDown ?? false} droppable={!cardsLocked} draggable={!cardsLocked} onMount={onCardMount} translateX={cardTranslates?.[card.id]} />
                 ))}
             </div>
 

@@ -22,14 +22,14 @@ export default (io: Server, socket: Socket) => {
 
     socket.on(ON_JOIN_ROOM, async ({ roomCode, playerId }: { roomCode: string; playerId: string }) => {
         try {
-            const players = await RoomService.accessRoomSocket({
+            const { players, playerNames } = await RoomService.accessRoomSocket({
                 roomCode,
                 playerId,
                 onRoomEvent: (data) => { io.to(roomCode).emit(EMIT_PLAYER_JOIN, { status: SUCCESS, data }); },
             });
             socket.data.playerId = playerId;
             socket.join(roomCode);
-            io.to(roomCode).emit(EMIT_PLAYER_JOIN, { status: SUCCESS, players });
+            io.to(roomCode).emit(EMIT_PLAYER_JOIN, { status: SUCCESS, players, playerNames });
         } catch (error) {
             io.to(roomCode).emit(SOCKET_ERROR, { status: ERROR, message: error });
         }

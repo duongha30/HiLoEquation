@@ -27,6 +27,7 @@ export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlaye
     const { ref } = useDroppable({ id });
     const dispatch = useAppDispatch();
     const [betAmount, setBetAmount] = useState(0);
+    const [enableFirstBet, setEnableFirstBet] = useState(true);
     const playerId = useAppSelector(selectUserId);
     const roomCode = useAppSelector(selectRoomCode);
     const myHand = useAppSelector(selectMyHand);
@@ -76,8 +77,9 @@ export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlaye
         setBetAmount(val);
     };
 
-    const handleBet = (isFirstBet: boolean = false) => {
+    const handleFirstBet = (isFirstBet: boolean = false) => {
         getSocket()?.emit(EMIT_BET_COIN, { roomCode, playerId, betting: MIN_FORCED_BET, isFirstBet });
+        setEnableFirstBet(false);
     };
 
     const handleCheck = () => {
@@ -102,6 +104,7 @@ export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlaye
     const handleConfirmEquation = () => {
         if (!nextConfirmTarget || !scan.isValid) return;
         getSocket()?.emit(EMIT_SUBMIT_EQUATION, { roomCode, playerId, target: nextConfirmTarget, cards });
+        setEnableFirstBet(true);
     };
 
     return (
@@ -122,12 +125,12 @@ export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlaye
                                 value={MIN_FORCED_BET}
                                 min={MIN_FORCED_BET}
                                 max={cash}
-                                onChange={handleBetInput}
                             />
                         </div>
                         <button
                             className={`${styles.btn} ${styles.betBtn}`}
-                            onClick={() => handleBet(true)}
+                            onClick={() => handleFirstBet(true)}
+                            disabled={!enableFirstBet}
                         >
                             Bet
                         </button>

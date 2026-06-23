@@ -105,6 +105,7 @@ export default (io: Server, socket: Socket) => {
             declarePhaseTimer.cancel(roomCode);
             const showdown = await Game.runShowdown(roomCode);
             if (showdown) {
+                await bulkUpdateCash(showdown.roomState.hands);
                 io.to(roomCode).emit(EMIT_SHOWDOWN_RESULT, { status: SUCCESS, ...showdown });
             }
         }

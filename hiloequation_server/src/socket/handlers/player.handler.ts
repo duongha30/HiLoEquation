@@ -1,6 +1,7 @@
 import type { Server, Socket } from 'socket.io';
 import { SUCCESS, ERROR, ON_BET_COIN, ON_FOLD_CARD, ON_PLAYER_ACTION, EMIT_BETTING, EMIT_FOLDING, EMIT_PLAYER_ACTION, EMIT_BETTING_ROUND_END, EMIT_DECLARE_PHASE_START, EMIT_SHOWDOWN_RESULT, SOCKET_ERROR } from '../events';
 import { Game } from '../../game';
+import { bulkUpdateCash } from '../../services/player.service';
 import { emitHandler } from '../../utils/socketUtils';
 import { declarePhaseTimer, DECLARE_PHASE_DURATION_MS } from '../declarePhaseTimer.ts';
 
@@ -53,6 +54,7 @@ export default (io: Server, socket: Socket) => {
             declarePhaseTimer.start(roomCode, async () => {
                 const showdown = await Game.runShowdown(roomCode);
                 if (showdown) {
+                    await bulkUpdateCash(showdown.roomState.hands);
                     io.to(roomCode).emit(EMIT_SHOWDOWN_RESULT, { status: SUCCESS, ...showdown });
                 }
             });

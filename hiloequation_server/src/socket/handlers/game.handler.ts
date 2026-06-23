@@ -5,6 +5,7 @@ import {
     EMIT_START, EMIT_GAME_RESULT, EMIT_CARD_DEAL, EMIT_DECLARE_POT, EMIT_SUBMIT_EQUATION, EMIT_SHOWDOWN_RESULT,
 } from '../events';
 import { Game } from '../../game';
+import { getCashMap, bulkUpdateCash } from '../../services/player.service';
 import { emitHandler } from '../../utils/socketUtils';
 import { encryptCards } from '../../game/deck.ts';
 import { declarePhaseTimer } from '../declarePhaseTimer.ts';
@@ -24,7 +25,8 @@ function buildWireHands(hands: HandsType): HandsType {
 
 export default (io: Server, socket: Socket) => {
     socket.on(ON_START_GAME, async ({ roomCode, playerIds }: { roomCode: string; playerIds: string[] }) => {
-        await Game.start(roomCode, playerIds);
+        const cashByPlayer = await getCashMap(playerIds);
+        await Game.start(roomCode, playerIds, cashByPlayer);
         const roomState = await Game.deal(roomCode, playerIds, 1, true);
 
         emitHandler({
@@ -57,7 +59,7 @@ export default (io: Server, socket: Socket) => {
                 status: SUCCESS, roomState: {
                     round: value.round,
                     totalBetting: value.totalBetting,
-                    hands: value.hands,
+                    hands: buildWireHands(value.hands),
                     bettingRound: value.bettingRound,
                 }
             })
@@ -103,6 +105,7 @@ export default (io: Server, socket: Socket) => {
             declarePhaseTimer.cancel(roomCode);
             const showdown = await Game.runShowdown(roomCode);
             if (showdown) {
+                await bulkUpdateCash(showdown.roomState.hands);
                 io.to(roomCode).emit(EMIT_SHOWDOWN_RESULT, { status: SUCCESS, ...showdown });
             }
         }

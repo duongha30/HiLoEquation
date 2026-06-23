@@ -8,9 +8,10 @@ type SocketMeta = {
 
 export const connectSocketThunk = createAppAsyncThunk(
     'socket/connectSocket',
-    async (_, { rejectWithValue }) => {
+    async (_, { rejectWithValue, getState }) => {
         try {
-            const socket = await connectSocket();
+            const { userId } = getState().userReducer;
+            const socket = await connectSocket(userId);
             // Return only serializable data — never put Socket instances in Redux
             return { connected: socket.connected, id: socket.id } satisfies SocketMeta;
         } catch (err) {

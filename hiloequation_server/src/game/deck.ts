@@ -75,7 +75,7 @@ export function drawCard(deck: CardData[]) {
 
 export function encryptCards(cards: CardData[], playerId: string): CardData[] {
     return cards.map((card) => {
-        if (card.type !== 'number') return card;
+        if (!card.hidden) return card;
 
         const payload = JSON.stringify({ id: card.id, type: card.type, suit: card.suit, value: card.value });
         const key = crypto.createHash('sha256').update(playerId + 'salt').digest();

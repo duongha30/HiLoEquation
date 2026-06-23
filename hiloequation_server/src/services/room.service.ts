@@ -68,7 +68,6 @@ class RoomService {
         if (!dbRoom) throw new BadRequestError({ message: 'Room not found' });
 
         await redisPubSubService.subscribe(roomCode, (ch: string, message: unknown) => {
-            console.log(`Room[${ch}] has new player joined: `, message);
             if (onRoomEvent) onRoomEvent(message);
         });
 
@@ -93,6 +92,12 @@ class RoomService {
     static async leaveRoomSocket({ roomCode, playerId }: { roomCode: string; playerId: string }) {
         if (!roomCode || !playerId) throw new BadRequestError({ message: 'Missing required fields' });
         await redisPubSubService.unsubscribe(roomCode, playerId);
+    }
+
+    static async removePlayerFromRoom({ roomCode, playerId }: { roomCode: string; playerId: string }) {
+        if (!roomCode || !playerId || !Types.ObjectId.isValid(playerId)) return;
+        await RoomModel.updateOne({ roomCode }, { $pull: { players: new Types.ObjectId(playerId) } });
+        await PlayerModel.updateOne({ _id: playerId }, { $set: { currentRoomId: null } });
     }
 }
 

@@ -57,9 +57,7 @@ export const signupThunkCases: AppAsyncThunkActionCases<
     fulfilled: (state, action) => {
         state.status = 'idle';
         if (action.payload?.user) {
-            console.log('state', state)
             const { _id, name, email } = action.payload.user;
-            console.log('_id, name, email', _id, name, email)
             state.userId = _id;
             state.name = name;
             state.email = email;

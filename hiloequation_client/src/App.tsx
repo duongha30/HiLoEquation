@@ -13,32 +13,6 @@ function App() {
 
   useDisconnectSocket();
 
-  // useEffect(() => {
-  //   const start = Game.start('001', ['1', '2']);
-  //   console.log('start', start)
-  //   // deliver round 1: 3 cards each player
-  //   const deal = Game.deal('001', 3);
-  //   console.log('deal', deal)
-
-  //   //1st betting
-  //   const bet1 = Game.bet('001', '1', 100)
-  //   const bet2 = Game.bet('001', '2', 200)
-  //   console.log('bet1', bet1)
-  //   console.log('bet2', bet2)
-
-  //   // deliver round 2: draw 2 open cards, if √ or × draw 1 extra number card
-  //   const deal2 = Game.deal('001', 2, false);
-  //   console.log('deal2', deal2)
-
-  //   // players submit their result
-  //   Game.setSubmission('001', '1', 15);
-  //   Game.setSubmission('001', '2', 18);
-
-  //   // finalize round: determine winner, distribute pot, reset for next round
-  //   const finalize = Game.finalizeRound('001');
-  //   console.log('finalize', finalize)
-  // }, []);
-
   useEffect(() => {
     const startAudio = () => {
       if (!started && audioRef.current) {
@@ -86,7 +60,7 @@ function App() {
   return (
     <div className={styles.container}>
       <div className={styles.audioContainer}>
-        {/* <audio ref={audioRef} src={casinoMusic} loop preload="auto" autoPlay /> */}
+        <audio ref={audioRef} src={casinoMusic} loop preload="auto" autoPlay />
         <div
           className={styles.musicControl}
           onMouseEnter={() => setShowVolume(true)}

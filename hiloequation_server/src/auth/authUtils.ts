@@ -20,8 +20,6 @@ const createTokenPair = async (payload: object, publicKey: string, privateKey: s
         JWT.verify(accessToken, publicKey, (err: Error | null, decode: unknown) => {
             if (err) {
                 console.error('Error verifying access token:', err);
-            } else {
-                console.log('Decoded access token:', decode);
             }
         });
 
@@ -34,6 +32,19 @@ const createTokenPair = async (payload: object, publicKey: string, privateKey: s
 
 const verifyJWT = async (token: string, keySecret: string) => {
     return JWT.verify(token, keySecret) as Record<string, unknown>;
+};
+
+const parseCookies = (cookieHeader?: string): Record<string, string> => {
+    const cookies: Record<string, string> = {};
+    if (!cookieHeader) return cookies;
+    for (const pair of cookieHeader.split(';')) {
+        const idx = pair.indexOf('=');
+        if (idx === -1) continue;
+        const key = pair.slice(0, idx).trim();
+        const value = pair.slice(idx + 1).trim();
+        if (key) cookies[key] = decodeURIComponent(value);
+    }
+    return cookies;
 };
 
 const authentication = asyncHandler(async (req: Request, _res: Response, next: NextFunction) => {
@@ -64,7 +75,6 @@ const authentication = asyncHandler(async (req: Request, _res: Response, next: N
         if (userId !== decodeUser.userId) throw new UnauthorizedError({ message: 'Invalid User Id' });
         (req as any).keyStore = keyStore;
         (req as any).user = decodeUser;
-        console.log('decodeUser', decodeUser);
         return next();
     } catch (error) {
         throw new UnauthorizedError({ message: String(error) });
@@ -72,15 +82,14 @@ const authentication = asyncHandler(async (req: Request, _res: Response, next: N
 });
 
 const socketAuth = async (socket: Socket) => {
-    const { accessToken, refreshToken, userId } = socket.handshake.auth as {
-        accessToken?: string;
-        refreshToken?: string;
-        userId?: string;
-    };
+    const userId = socket.handshake.headers[HEADER.CLIENT_ID] as string;
+    const cookies = parseCookies(socket.handshake.headers.cookie);
+
     if (!userId) throw new UnauthorizedError({ message: 'Invalid Request' });
 
     const keyStore = await KeyTokenService.fincByUserId(userId);
     if (!keyStore) throw new UnauthorizedError({ message: 'Keys Not Found' });
+    const refreshToken = cookies.refreshToken || (socket.handshake.headers[HEADER.REFRESH_TOKEN] as string);
 
     if (refreshToken) {
         try {
@@ -91,7 +100,7 @@ const socketAuth = async (socket: Socket) => {
             throw new UnauthorizedError({ message: String(error) });
         }
     }
-
+    const accessToken = cookies.accessToken || (socket.handshake.headers[HEADER.AUTHORIZATION] as string);
     if (!accessToken) throw new UnauthorizedError({ message: 'Invalid Request. No accessToken' });
 
     try {

@@ -11,6 +11,7 @@ const PlayerSchema = new Schema(
         currentRoomId: { type: Types.ObjectId, ref: 'Room', default: null },
         status: { type: String, enum: ['active', 'inactive'], default: 'inactive' },
         isHost: { type: Boolean, default: false },
+        cash: { type: Number, default: 2000 },
     },
     { timestamps: true, collection: COLLECTION_NAME },
 );

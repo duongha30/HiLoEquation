@@ -81,6 +81,10 @@ const gameSlice = createSlice({
                 state.hands[playerId] = { ...hand, cards: existingCards };
             }
         },
+        removeHand: (state, action: PayloadAction<{ playerId: string }>) => {
+            delete state.hands[action.payload.playerId];
+            delete state.revealedHands[action.payload.playerId];
+        },
         updateHand: (state, action: PayloadAction<{ playerId: string; hand: Partial<HandSnapshot>; totalBetting?: number }>) => {
             const { playerId, hand, totalBetting } = action.payload;
             if (state.hands[playerId]) {
@@ -116,6 +120,7 @@ export const {
     setGameState,
     setGameStateWithoutCards,
     updateHand,
+    removeHand,
     resetGame,
     setPlayingStatus,
     updateRound,

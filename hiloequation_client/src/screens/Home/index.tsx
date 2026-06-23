@@ -5,6 +5,7 @@ import { Button, CreateJoinModal } from "@/components";
 import { createRoom, joinRoom, selectUserId } from "@/store";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { useConnectSocket } from "@/hooks";
+import { url } from "@/utils/constant";
 import type { RoomDB } from '@/store/types/room';
 
 const DOT_COUNT = 28;
@@ -22,7 +23,6 @@ export const Home = () => {
 
     const handleJoinRoom = async (password: string, roomCode: string) => {
         const data = await dispatch(joinRoom({ roomCode, playerId: userId, password: password }));
-        console.log('data', data)
         if ((data?.payload as RoomDB)?.roomCode) {
             navigate(`/room/${roomCode}`);
             setShowJoinModal(false);
@@ -36,7 +36,6 @@ export const Home = () => {
             hostId: userId,
             maxPlayers: 4
         }));
-        console.log('data', data)
         if ((data?.payload as RoomDB)?.roomCode) {
             navigate(`/room/${(data.payload as RoomDB).roomCode}`);
             setShowCreateModal(false);
@@ -79,7 +78,7 @@ export const Home = () => {
             <div className={styles.buttonsSection}>
                 <Button text="Create Room" onClick={() => setShowCreateModal(true)} />
                 <Button text="Join Room" onClick={() => setShowJoinModal(true)} />
-                <Button text="test Join Room" onClick={() => navigate(`/room/testId`)} />
+                <Button text="User Guide" onClick={() => navigate(url.userGuide)} />
             </div>
 
             {showJoinModal && (

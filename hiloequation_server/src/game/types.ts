@@ -12,6 +12,7 @@ type CardData = {
     operation?: OperationSymbol;
     encryptedData?: string;
     faceDown?: boolean;
+    hidden?: boolean;
 };
 
 type PotSelection = 'hi' | 'lo' | 'swing' | null;

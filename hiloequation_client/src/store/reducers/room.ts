@@ -44,6 +44,7 @@ const roomSlice = createSlice({
             const playerId = action?.payload?.playerId;
             if (playerId) {
                 state.players = state.players.filter(id => id !== playerId);
+                if (state.playerNames) delete state.playerNames[playerId];
             }
         },
     },

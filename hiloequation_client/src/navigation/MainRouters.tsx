@@ -1,4 +1,4 @@
-import { Home, Room, Login, Signup } from '@/screens';
+import { Home, Room, Login, Signup, UserGuide } from '@/screens';
 import { url } from '@/utils/constant';
 import { Routes, Route, Navigate, useParams, useLocation } from "react-router";
 import { AuthRouter } from './AuthRoute';
@@ -34,6 +34,7 @@ export default function MainRouters() {
       <PrivateRoute>
         <Routes>
           <Route path={url.home} element={<Home />} />
+          <Route path={url.userGuide} element={<UserGuide />} />
           <Route path={url.room} element={<Room />} />
         </Routes>
       </PrivateRoute>

@@ -3,6 +3,7 @@ export const url = {
     signup: '/signup',
     home: '/',
     room: '/room/:roomId',
+    userGuide: '/user-guide',
 };
 
 export const SOCKET_ONCE_TIMEOUT = 5000;

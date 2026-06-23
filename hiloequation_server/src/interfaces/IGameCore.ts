@@ -12,7 +12,7 @@ export interface IGameCore {
     getPlayer(roomId: string, playerId: string): Promise<PlayerSnapshot | undefined>;
     destroy(roomId: string): Promise<void>;
     clearPlayer(roomId: string, playerId: string): Promise<GameState | undefined>;
-    start(roomId: string, players: string[]): Promise<GameState | undefined>;
+    start(roomId: string, players: string[], cashByPlayer?: Record<string, number>): Promise<GameState | undefined>;
     deal(roomId: string, playerId: string[], times: number, isFirstDraw?: boolean): Promise<GameState | undefined>;
     bet(roomId: string, playerId: string, betting: number, isFirstBet: boolean): Promise<PlayerSnapshot | undefined>;
     fold(roomId: string, playerId: string): Promise<PlayerSnapshot | undefined>;

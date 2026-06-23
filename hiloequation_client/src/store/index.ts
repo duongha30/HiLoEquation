@@ -32,6 +32,10 @@ export {
     selectCurrentTurnPlayerId,
     selectIsMyTurn,
     selectCurrentBet,
+    selectMyPotSelection,
+    selectRevealedHands,
+    selectMyRevealedHand,
+    selectDeclareDeadlineAt,
 } from './selectors/game';
 
 // ------ Reducers ------
@@ -44,7 +48,8 @@ export {
     setPlayingStatus,
     updateRound,
     setIsForcedBetPhase,
-    setPotSelection,
+    setRevealedHands,
+    setDeclareDeadlineAt,
 } from './reducers/game';
 export {
     leaveRoom,

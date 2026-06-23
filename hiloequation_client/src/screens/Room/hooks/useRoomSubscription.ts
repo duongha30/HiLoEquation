@@ -1,11 +1,15 @@
 import { selectIsSocketConnected, selectUserId, setGameState, setPlayingStatus, setGameStateWithoutCards } from "@/store";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { updatePlayersInRoom } from "@/store/reducers/room";
-import { setIsForcedBetPhase, updateHand, updateRound } from "@/store/reducers/game";
-import { ON_BETTING, ON_CARD_DEAL, ON_FOLDING, ON_PLAYER_JOIN, ON_PLAYER_READY, ON_START, ON_PLAYER_ACTION, ON_BETTING_ROUND_END } from "@/store/socket/events";
+import { setIsForcedBetPhase, setRevealedHands, setDeclareDeadlineAt, updateHand, updateRound } from "@/store/reducers/game";
+import {
+    ON_BETTING, ON_CARD_DEAL, ON_FOLDING, ON_PLAYER_JOIN, ON_PLAYER_READY, ON_START, ON_PLAYER_ACTION, ON_BETTING_ROUND_END,
+    ON_DECLARE_POT, ON_SUBMIT_EQUATION, ON_DECLARE_PHASE_START, ON_SHOWDOWN_RESULT,
+} from "@/store/socket/events";
 import { getSocket } from "@/store/socket/socket";
 import { useRoomStore } from "../roomStore";
 import type { ServerRoomState } from '@/store/reducers/game';
+import type { RevealedHands } from "@/types/game";
 import { useEffect } from 'react';
 import { decryptCards } from "@/utils/card";
 
@@ -97,6 +101,27 @@ export const useRoomSubscription = () => {
             dispatch(setGameStateWithoutCards(data.roomState));
         };
 
+        const onDeclarePhaseStart = (data: { status: number; deadlineAt: number }) => {
+            if (data.status !== 200) return;
+            dispatch(setDeclareDeadlineAt(data.deadlineAt));
+        };
+
+        const onDeclarePot = (data: any) => {
+            if (data.status !== 200 || !data.roomState) return;
+            dispatch(setGameStateWithoutCards(data.roomState));
+        };
+
+        const onEquationSubmitted = (data: any) => {
+            if (data.status !== 200 || !data.roomState) return;
+            dispatch(setGameStateWithoutCards(data.roomState));
+        };
+
+        const onShowdownResult = (data: { status: number; revealedHands?: RevealedHands; roomState?: any }) => {
+            if (data.status !== 200) return;
+            if (data.revealedHands) dispatch(setRevealedHands(data.revealedHands));
+            if (data.roomState) dispatch(setGameStateWithoutCards(data.roomState));
+        };
+
         socket.on(ON_PLAYER_JOIN, onPlayerJoin);
         socket.on(ON_PLAYER_READY, onPlayerReady);
         socket.on(ON_START, onStartGame);
@@ -105,6 +130,10 @@ export const useRoomSubscription = () => {
         socket.on(ON_FOLDING, onFoldCard);
         socket.on(ON_PLAYER_ACTION, onPlayerAction);
         socket.on(ON_BETTING_ROUND_END, onBettingRoundEnd);
+        socket.on(ON_DECLARE_PHASE_START, onDeclarePhaseStart);
+        socket.on(ON_DECLARE_POT, onDeclarePot);
+        socket.on(ON_SUBMIT_EQUATION, onEquationSubmitted);
+        socket.on(ON_SHOWDOWN_RESULT, onShowdownResult);
 
         return () => {
             socket.off(ON_PLAYER_JOIN, onPlayerJoin);
@@ -115,6 +144,10 @@ export const useRoomSubscription = () => {
             socket.off(ON_FOLDING, onFoldCard);
             socket.off(ON_PLAYER_ACTION, onPlayerAction);
             socket.off(ON_BETTING_ROUND_END, onBettingRoundEnd);
+            socket.off(ON_DECLARE_PHASE_START, onDeclarePhaseStart);
+            socket.off(ON_DECLARE_POT, onDeclarePot);
+            socket.off(ON_SUBMIT_EQUATION, onEquationSubmitted);
+            socket.off(ON_SHOWDOWN_RESULT, onShowdownResult);
         };
     }, [isConnected, setPlayerReady, dispatch, playerId]);
 };

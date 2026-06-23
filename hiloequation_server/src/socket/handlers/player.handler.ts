@@ -1,7 +1,8 @@
 import type { Server, Socket } from 'socket.io';
-import { SUCCESS, ERROR, ON_BET_COIN, ON_FOLD_CARD, ON_PLAYER_ACTION, EMIT_BETTING, EMIT_FOLDING, EMIT_PLAYER_ACTION, EMIT_BETTING_ROUND_END, SOCKET_ERROR } from '../events';
+import { SUCCESS, ERROR, ON_BET_COIN, ON_FOLD_CARD, ON_PLAYER_ACTION, EMIT_BETTING, EMIT_FOLDING, EMIT_PLAYER_ACTION, EMIT_BETTING_ROUND_END, EMIT_DECLARE_PHASE_START, EMIT_SHOWDOWN_RESULT, SOCKET_ERROR } from '../events';
 import { Game } from '../../game';
 import { emitHandler } from '../../utils/socketUtils';
+import { declarePhaseTimer, DECLARE_PHASE_DURATION_MS } from '../declarePhaseTimer.ts';
 
 export default (io: Server, socket: Socket) => {
     socket.on(ON_BET_COIN, async ({ roomCode, playerId, betting, isFirstBet }: { roomCode: string; playerId: string; betting: number, isFirstBet: boolean }) => {
@@ -43,5 +44,18 @@ export default (io: Server, socket: Socket) => {
 
         const eventName = roundEnded ? EMIT_BETTING_ROUND_END : EMIT_PLAYER_ACTION;
         io.to(roomCode).emit(eventName, payload);
+
+        if (roundEnded && state.round === 4) {
+            const deadlineAt = Date.now() + DECLARE_PHASE_DURATION_MS;
+            await Game.setDeclareDeadline(roomCode, deadlineAt);
+            io.to(roomCode).emit(EMIT_DECLARE_PHASE_START, { status: SUCCESS, deadlineAt });
+
+            declarePhaseTimer.start(roomCode, async () => {
+                const showdown = await Game.runShowdown(roomCode);
+                if (showdown) {
+                    io.to(roomCode).emit(EMIT_SHOWDOWN_RESULT, { status: SUCCESS, ...showdown });
+                }
+            });
+        }
     });
 };

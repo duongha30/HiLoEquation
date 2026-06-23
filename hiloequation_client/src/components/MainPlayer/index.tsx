@@ -7,9 +7,9 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { selectUserId } from '@/store/selectors/user';
 import { selectRoomCode } from '@/store/selectors/room';
 import { getSocket } from '@/store/socket/socket';
-import { EMIT_BET_COIN, EMIT_FOLD_CARD, EMIT_PLAYER_ACTION } from '@/store/socket/events';
-import { selectMyHand, selectGameRound, selectIsPlaying, selectBettingRound, selectCurrentBet, selectIsMyTurn, setIsForcedBetPhase, setPotSelection } from '@/store';
-import { selectIsForcedBetPhase, selectPotSelection } from '@/store/selectors/game';
+import { EMIT_BET_COIN, EMIT_FOLD_CARD, EMIT_PLAYER_ACTION, EMIT_DECLARE_POT, EMIT_SUBMIT_EQUATION } from '@/store/socket/events';
+import { selectMyHand, selectGameRound, selectIsPlaying, selectBettingRound, selectCurrentBet, selectIsMyTurn, setIsForcedBetPhase } from '@/store';
+import { selectIsForcedBetPhase, selectMyPotSelection, selectMyRevealedHand } from '@/store/selectors/game';
 
 const BET_STEP = 10;
 const MIN_FORCED_BET = 50;
@@ -37,11 +37,21 @@ export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlaye
     const currentBet = useAppSelector(selectCurrentBet);
     const isMyTurn = useAppSelector(selectIsMyTurn);
     const isForcedBetPhase = useAppSelector(selectIsForcedBetPhase);
-    const potSelection = useAppSelector(selectPotSelection);
+    const myPotSelection = useAppSelector(selectMyPotSelection);
+    const myRevealedHand = useAppSelector(selectMyRevealedHand);
 
     const myContribution = bettingRound?.contributions[playerId ?? ''] ?? 0;
     const callAmount = Math.max(0, currentBet - myContribution);
     const canCheck = isMyTurn && callAmount === 0;
+
+    const nextConfirmTarget = useMemo((): 'hi' | 'lo' | null => {
+        if (!myPotSelection) return null;
+        if (myPotSelection === 'hi') return myHand?.hiSubmission ? null : 'hi';
+        if (myPotSelection === 'lo') return myHand?.loSubmission ? null : 'lo';
+        if (!myHand?.hiSubmission) return 'hi';
+        if (!myHand?.loSubmission) return 'lo';
+        return null;
+    }, [myPotSelection, myHand?.hiSubmission, myHand?.loSubmission]);
 
     useEffect(() => {
         if (isPlaying && round === 0 && (myHand?.bet ?? 0) === 0) {
@@ -49,12 +59,6 @@ export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlaye
             return () => clearTimeout(timer);
         }
     }, [isPlaying, round, myHand]);
-
-    useEffect(() => {
-        if (round === 0) {
-            dispatch(setPotSelection(null));
-        }
-    }, [round]);
 
     const handleIncrease = () => {
         setBetAmount((prev) => Math.min(prev + BET_STEP, cash));
@@ -70,7 +74,6 @@ export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlaye
     };
 
     const handleBet = (isFirstBet: boolean = false) => {
-        console.log('handleBet')
         getSocket()?.emit(EMIT_BET_COIN, { roomCode, playerId, betting: MIN_FORCED_BET, isFirstBet });
     };
 
@@ -89,7 +92,13 @@ export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlaye
     };
 
     const handlePotSelection = (selection: 'hi' | 'lo' | 'swing') => {
-        dispatch(setPotSelection(selection));
+        if (myPotSelection) return;
+        getSocket()?.emit(EMIT_DECLARE_POT, { roomCode, playerId, selection });
+    };
+
+    const handleConfirmEquation = () => {
+        if (!nextConfirmTarget) return;
+        getSocket()?.emit(EMIT_SUBMIT_EQUATION, { roomCode, playerId, target: nextConfirmTarget, cards });
     };
 
     return (
@@ -162,33 +171,49 @@ export const MainPlayer = ({ id, cards, onCardMount, cardTranslates }: MainPlaye
                 </div>
             )}
 
-            {isPlaying && round === 4 && (
+            {isPlaying && round === 4 && !myRevealedHand && (
                 <div className={styles.potSelectionPanel}>
                     <span className={styles.bettingRoundLabel}>Declare your pot</span>
                     <div className={styles.actions}>
                         <button
-                            className={`${styles.btn} ${styles.potBtn} ${potSelection === 'hi' ? styles.potBtnActive : ''}`}
+                            className={`${styles.btn} ${styles.potBtn} ${myPotSelection === 'hi' ? styles.potBtnActive : ''}`}
                             onClick={() => handlePotSelection('hi')}
+                            disabled={!!myPotSelection}
                         >
                             Hi Pot
                         </button>
                         <button
-                            className={`${styles.btn} ${styles.potBtn} ${potSelection === 'lo' ? styles.potBtnActive : ''}`}
+                            className={`${styles.btn} ${styles.potBtn} ${myPotSelection === 'lo' ? styles.potBtnActive : ''}`}
                             onClick={() => handlePotSelection('lo')}
+                            disabled={!!myPotSelection}
                         >
                             Lo Pot
                         </button>
                         <button
-                            className={`${styles.btn} ${styles.potBtn} ${potSelection === 'swing' ? styles.potBtnActive : ''}`}
+                            className={`${styles.btn} ${styles.potBtn} ${myPotSelection === 'swing' ? styles.potBtnActive : ''}`}
                             onClick={() => handlePotSelection('swing')}
+                            disabled={!!myPotSelection}
                         >
                             Swing
                         </button>
                     </div>
+
+                    {myPotSelection && nextConfirmTarget && (
+                        <div className={styles.actions}>
+                            <span className={styles.bettingRoundLabel}>
+                                Arrange your cards{myPotSelection === 'swing' ? ` for ${nextConfirmTarget === 'hi' ? 'Hi' : 'Lo'} Pot` : ''}
+                            </span>
+                            <button className={`${styles.btn} ${styles.betBtn}`} onClick={handleConfirmEquation}>
+                                Confirm Equation{myPotSelection === 'swing' ? ` (${nextConfirmTarget === 'hi' ? '1/2' : '2/2'})` : ''}
+                            </button>
+                        </div>
+                    )}
+
+                    {myPotSelection && !nextConfirmTarget && (
+                        <span className={styles.bettingRoundLabel}>Submitted — waiting for showdown…</span>
+                    )}
                 </div>
             )}
         </div>
     );
 };
-
-

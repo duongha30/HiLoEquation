@@ -7,15 +7,17 @@ import { useDrapDrop } from './hooks/useDragDrop';
 import { useRoomStore } from './roomStore';
 import { useAppSelector } from '@/store/hooks';
 import { selectAllGuess, selectMyHand } from '@/store';
-import { StartReadyButton, BettingDisplay } from './components/';
+import { selectMyRevealedHand } from '@/store/selectors/game';
+import { StartReadyButton, BettingDisplay, DeclareTimer } from './components/';
 import { useRoomEmitting } from './hooks/useRoomEmitting';
 
 export const Room = () => {
   const cardRefs = useRef<Map<string, HTMLElement>>(new Map());
   const guess = useAppSelector(selectAllGuess);
   const myHand = useAppSelector(selectMyHand);
+  const myRevealedHand = useAppSelector(selectMyRevealedHand);
 
-  const playerCards = useMemo(() => myHand?.cards ?? [], [myHand?.cards]);
+  const playerCards = useMemo(() => myRevealedHand?.cards ?? myHand?.cards ?? [], [myRevealedHand?.cards, myHand?.cards]);
   const { cardTranslates } = useRoomStore();
   const playerCardsRef = useRef(playerCards);
 
@@ -49,6 +51,7 @@ export const Room = () => {
         <div className={styles.deckSection}>
           <StartReadyButton />
           <BettingDisplay />
+          <DeclareTimer />
           <Deck />
         </div>
         <MainPlayer

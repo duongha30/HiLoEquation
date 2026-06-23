@@ -17,9 +17,18 @@ export interface IGameCore {
     bet(roomId: string, playerId: string, betting: number, isFirstBet: boolean): Promise<PlayerSnapshot | undefined>;
     fold(roomId: string, playerId: string): Promise<PlayerSnapshot | undefined>;
     setSubmission(roomId: string, playerId: string, result: number): Promise<PlayerSnapshot | undefined>;
+    declarePot(roomId: string, playerId: string, selection: 'hi' | 'lo' | 'swing'): Promise<GameState | undefined>;
+    submitEquation(roomId: string, playerId: string, target: 'hi' | 'lo', cards: CardData[]): Promise<{ state: GameState; allComplete: boolean } | undefined>;
     finalizeRound(roomId: string): Promise<GameState | undefined>;
     startBettingRound(roomId: string, players: string[]): Promise<GameState | undefined>;
     processBettingAction(roomId: string, playerId: string, action: 'bet' | 'check' | 'fold', amount?: number): Promise<{ state: GameState; roundEnded: boolean } | undefined>;
+    setDeclareDeadline(roomId: string, deadlineAt: number): Promise<GameState | undefined>;
+    runShowdown(roomId: string): Promise<{
+        hiWinner: { playerId: string; result: number; amount: number } | null;
+        loWinner: { playerId: string; result: number; amount: number } | null;
+        revealedHands: Record<string, { cards: CardData[]; potSelection: unknown; hiSubmission: unknown; loSubmission: unknown }>;
+        roomState: GameState;
+    } | undefined>;
 }
 
 export type { BettingRoundState };

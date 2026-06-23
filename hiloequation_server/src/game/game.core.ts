@@ -1,5 +1,6 @@
 'use strict';
-import { createDeck, drawOnlyNumber, shuffleDeck, encryptCards } from './deck.ts';
+import { createDeck, drawOnlyNumber, shuffleDeck } from './deck.ts';
+import { scanningCard } from './scanningCard.ts';
 import type {
     CardData,
     GameState,
@@ -43,6 +44,9 @@ class GameCore implements IGameCore {
                 score: hand.score,
                 bet: hand.bet,
                 cards: this.cloneCards(hand.cards),
+                potSelection: hand.potSelection,
+                hiSubmission: hand.hiSubmission ? { cards: this.cloneCards(hand.hiSubmission.cards) ?? [], result: hand.hiSubmission.result } : null,
+                loSubmission: hand.loSubmission ? { cards: this.cloneCards(hand.loSubmission.cards) ?? [], result: hand.loSubmission.result } : null,
             };
         }
         return cloned;
@@ -62,11 +66,70 @@ class GameCore implements IGameCore {
                 }
                 : null,
             nextStarterIndex: roomState.nextStarterIndex,
+            declareDeadlineAt: roomState.declareDeadlineAt,
         };
+    }
+
+    private suitRank(suit?: string): number {
+        const ranks: Record<string, number> = { gold: 3, silver: 2, bronze: 1, black: 0 };
+        return suit ? (ranks[suit] ?? -1) : -1;
+    }
+
+    private highestCardValue(submission: { cards: CardData[]; result: number } | null): { value: number; suitRank: number } {
+        if (!submission) return { value: -1, suitRank: -1 };
+        let best = { value: -1, suitRank: -1 };
+        for (const card of submission.cards) {
+            if (card.type !== 'number' || card.value === undefined) continue;
+            const sRank = this.suitRank(card.suit);
+            if (card.value > best.value || (card.value === best.value && sRank > best.suitRank)) {
+                best = { value: card.value, suitRank: sRank };
+            }
+        }
+        return best;
+    }
+
+    private pickWinner(
+        candidates: Array<{ playerId: string; submission: { cards: CardData[]; result: number } }>,
+        target: number
+    ): string | null {
+        if (candidates.length === 0) return null;
+
+        let best = candidates[0];
+        let bestDiff = Math.abs(best.submission.result - target);
+        let bestTie = this.highestCardValue(best.submission);
+
+        for (const candidate of candidates.slice(1)) {
+            const diff = Math.abs(candidate.submission.result - target);
+            if (diff < bestDiff) {
+                best = candidate;
+                bestDiff = diff;
+                bestTie = this.highestCardValue(candidate.submission);
+                continue;
+            }
+            if (diff === bestDiff) {
+                const tie = this.highestCardValue(candidate.submission);
+                if (tie.value > bestTie.value || (tie.value === bestTie.value && tie.suitRank > bestTie.suitRank)) {
+                    best = candidate;
+                    bestTie = tie;
+                }
+            }
+        }
+        return best.playerId;
     }
 
     private getRequiredPlayer(roomState: GameState, playerId: string): HandsType[string] | null {
         return roomState.hands[playerId] ?? null;
+    }
+
+    private allActivePlayersComplete(roomState: GameState): boolean {
+        const activePlayers = Object.values(roomState.hands).filter((p) => p.cards !== null);
+        if (activePlayers.length === 0) return false;
+        return activePlayers.every((p) => {
+            if (p.potSelection === 'hi') return p.hiSubmission !== null;
+            if (p.potSelection === 'lo') return p.loSubmission !== null;
+            if (p.potSelection === 'swing') return p.hiSubmission !== null && p.loSubmission !== null;
+            return false;
+        });
     }
 
     async getRoom(roomCode: string): Promise<GameState | undefined> {
@@ -119,6 +182,9 @@ class GameCore implements IGameCore {
                 score: INIT_SCORE,
                 cards: null,
                 bet: INIT_BETTING,
+                potSelection: null,
+                hiSubmission: null,
+                loSubmission: null,
             };
         }
 
@@ -129,6 +195,7 @@ class GameCore implements IGameCore {
             totalBetting: 0,
             bettingRound: null,
             nextStarterIndex: existingState?.nextStarterIndex ?? 0,
+            declareDeadlineAt: null,
         };
         await this.setState(roomCode, newState);
         return this.cloneRoom(newState);
@@ -169,7 +236,10 @@ class GameCore implements IGameCore {
                     cash: playerState.cash,
                     score: playerState.score,
                     bet: playerState.bet,
-                    cards: [...existingCards, ...encryptCards(drawnCards, playerId), ...defaultOps],
+                    cards: [...existingCards, ...drawnCards, ...defaultOps],
+                    potSelection: playerState.potSelection,
+                    hiSubmission: playerState.hiSubmission,
+                    loSubmission: playerState.loSubmission,
                 };
             } else {
                 // Round deal: always draw exactly one number card (unencrypted)
@@ -212,6 +282,9 @@ class GameCore implements IGameCore {
                     score: playerState.score,
                     bet: playerState.bet,
                     cards: [...updatedCards, ...drawnCards],
+                    potSelection: playerState.potSelection,
+                    hiSubmission: playerState.hiSubmission,
+                    loSubmission: playerState.loSubmission,
                 };
             }
         }
@@ -292,6 +365,58 @@ class GameCore implements IGameCore {
         return this.getPlayer(roomCode, playerId);
     }
 
+    async declarePot(roomCode: string, playerId: string, selection: 'hi' | 'lo' | 'swing') {
+        const roomState = await this.getState(roomCode);
+        if (!roomState) return undefined;
+        if (roomState.round !== 4) return undefined;
+
+        const playerState = this.getRequiredPlayer(roomState, playerId);
+        if (!playerState || playerState.cards === null) return undefined;
+
+        const nextRoomState: GameState = {
+            ...roomState,
+            hands: { ...roomState.hands, [playerId]: { ...playerState, potSelection: selection } },
+        };
+        await this.setState(roomCode, nextRoomState);
+        return this.cloneRoom(nextRoomState);
+    }
+
+    async submitEquation(roomCode: string, playerId: string, target: 'hi' | 'lo', cards: CardData[]) {
+        const roomState = await this.getState(roomCode);
+        if (!roomState) return undefined;
+        if (roomState.round !== 4) return undefined;
+
+        const playerState = this.getRequiredPlayer(roomState, playerId);
+        if (!playerState || playerState.cards === null) return undefined;
+
+        const ownedIds = playerState.cards.map((c) => c.id).sort();
+        const submittedIds = cards.map((c) => c.id).sort();
+        if (ownedIds.length !== submittedIds.length || ownedIds.some((id, i) => id !== submittedIds[i])) {
+            return undefined;
+        }
+
+        if (playerState.potSelection === 'hi' && target !== 'hi') return undefined;
+        if (playerState.potSelection === 'lo' && target !== 'lo') return undefined;
+        if (playerState.potSelection !== 'hi' && playerState.potSelection !== 'lo' && playerState.potSelection !== 'swing') return undefined;
+
+        const orderedCards = cards.map((submitted) => playerState.cards!.find((owned) => owned.id === submitted.id)!);
+        const { correctedCards, result } = scanningCard(orderedCards);
+
+        const submission = { cards: correctedCards, result };
+        const nextHand = target === 'hi'
+            ? { ...playerState, hiSubmission: submission }
+            : { ...playerState, loSubmission: submission };
+
+        const nextRoomState: GameState = {
+            ...roomState,
+            hands: { ...roomState.hands, [playerId]: nextHand },
+        };
+        await this.setState(roomCode, nextRoomState);
+
+        const allComplete = this.allActivePlayersComplete(nextRoomState);
+        return { state: this.cloneRoom(nextRoomState), allComplete };
+    }
+
     async finalizeRound(roomCode: string) {
         const roomState = await this.getState(roomCode);
         if (!roomState) return undefined;
@@ -352,6 +477,14 @@ class GameCore implements IGameCore {
             lastRaiserId: activePlayers[0],
         };
 
+        await this.setState(roomCode, roomState);
+        return this.cloneRoom(roomState);
+    }
+
+    async setDeclareDeadline(roomCode: string, deadlineAt: number) {
+        const roomState = await this.getState(roomCode);
+        if (!roomState) return undefined;
+        roomState.declareDeadlineAt = deadlineAt;
         await this.setState(roomCode, roomState);
         return this.cloneRoom(roomState);
     }
@@ -419,6 +552,78 @@ class GameCore implements IGameCore {
 
         await this.setState(roomCode, roomState);
         return { state: this.cloneRoom(roomState), roundEnded };
+    }
+
+    async runShowdown(roomCode: string) {
+        const roomState = await this.getState(roomCode);
+        if (!roomState) return undefined;
+
+        type Candidate = { playerId: string; submission: { cards: CardData[]; result: number } };
+        const hiCandidates: Candidate[] = [];
+        const loCandidates: Candidate[] = [];
+
+        for (const playerId in roomState.hands) {
+            const hand = roomState.hands[playerId];
+            if (hand.cards === null) continue;
+            const selection = hand.potSelection ?? 'swing';
+            if ((selection === 'hi' || selection === 'swing') && hand.hiSubmission) {
+                hiCandidates.push({ playerId, submission: hand.hiSubmission });
+            }
+            if ((selection === 'lo' || selection === 'swing') && hand.loSubmission) {
+                loCandidates.push({ playerId, submission: hand.loSubmission });
+            }
+        }
+
+        const hiWinnerId = this.pickWinner(hiCandidates, 20);
+        const loWinnerId = this.pickWinner(loCandidates, 1);
+
+        const hiPotAmount = Math.floor(roomState.totalBetting / 2);
+        const loPotAmount = roomState.totalBetting - hiPotAmount;
+
+        const revealedHands: Record<string, { cards: CardData[]; potSelection: HandsType[string]['potSelection']; hiSubmission: HandsType[string]['hiSubmission']; loSubmission: HandsType[string]['loSubmission'] }> = {};
+        const nextHands: HandsType = {};
+
+        for (const playerId in roomState.hands) {
+            const hand = roomState.hands[playerId];
+            revealedHands[playerId] = {
+                cards: this.cloneCards(hand.cards) ?? [],
+                potSelection: hand.potSelection,
+                hiSubmission: hand.hiSubmission,
+                loSubmission: hand.loSubmission,
+            };
+
+            let wonCash = 0;
+            if (playerId === hiWinnerId) wonCash += hiPotAmount;
+            if (playerId === loWinnerId) wonCash += loPotAmount;
+
+            nextHands[playerId] = {
+                cash: hand.cash + wonCash,
+                score: 0,
+                bet: 0,
+                cards: null,
+                potSelection: null,
+                hiSubmission: null,
+                loSubmission: null,
+            };
+        }
+
+        const playerCount = Object.keys(nextHands).length;
+        const nextRoomState: GameState = {
+            ...roomState,
+            hands: nextHands,
+            totalBetting: 0,
+            bettingRound: null,
+            declareDeadlineAt: null,
+            nextStarterIndex: playerCount > 0 ? (roomState.nextStarterIndex + 1) % playerCount : 0,
+        };
+        await this.setState(roomCode, nextRoomState);
+
+        return {
+            hiWinner: hiWinnerId ? { playerId: hiWinnerId, result: roomState.hands[hiWinnerId].hiSubmission!.result, amount: hiPotAmount } : null,
+            loWinner: loWinnerId ? { playerId: loWinnerId, result: roomState.hands[loWinnerId].loSubmission!.result, amount: loPotAmount } : null,
+            revealedHands,
+            roomState: this.cloneRoom(nextRoomState),
+        };
     }
 }
 

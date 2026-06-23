@@ -2,6 +2,7 @@ import styles from './Player.module.css';
 import { Card } from '@/components';
 import { useAppSelector } from '@/store/hooks';
 import { selectAllHands, selectCurrentTurnPlayerId } from '@/store';
+import { selectRevealedHands } from '@/store/selectors/game';
 
 type PlayerProps = {
     id: string;
@@ -18,7 +19,9 @@ const ROTATION = {
 export const Player = ({ id, position, additionalStyle }: PlayerProps) => {
     const hand = useAppSelector(selectAllHands)[id];
     const currentTurnPlayerId = useAppSelector(selectCurrentTurnPlayerId);
-    const allCards = hand?.cards ?? [];
+    const revealedHands = useAppSelector(selectRevealedHands);
+    const revealedHand = revealedHands[id];
+    const allCards = revealedHand?.cards ?? hand?.cards ?? [];
     const normalizedCards = allCards.map((c, i) => ({ ...c, id: c.id ?? `face-down-${i}` }));
     const isCurrentTurn = currentTurnPlayerId === id;
 
@@ -27,7 +30,7 @@ export const Player = ({ id, position, additionalStyle }: PlayerProps) => {
             <div className={`${styles.cardsGroup} ${ROTATION[position]}`}>
                 {normalizedCards.map(c => (
                     <div key={c.id} className={styles.cardWrapper}>
-                        <Card card={c} faceDown={!!c.encryptedData} droppable={false} />
+                        <Card card={c} faceDown={revealedHand ? false : !!c.encryptedData} droppable={false} />
                     </div>
                 ))}
             </div>

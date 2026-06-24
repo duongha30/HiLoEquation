@@ -2,7 +2,7 @@ import { io, Socket } from 'socket.io-client';
 import config from '../../config/config.json'
 
 let socket: Socket | null = null;
-const socketURL = config.SOCKET_URL;
+const socketURL = config.SOCKET_URL || undefined;
 
 export const connectSocket = async (userId: string): Promise<Socket> => {
     if (!socket) {

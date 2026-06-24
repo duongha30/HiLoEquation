@@ -26,7 +26,7 @@ const prod: AppConfig = {
     },
 };
 
-const config: Record<string, AppConfig> = { dev, prod, test, default: dev };
+const config: Record<string, AppConfig> = { dev, prod, test, production: prod, default: dev };
 const env = process.env.NODE_ENV || 'dev';
 
 export default config[env];

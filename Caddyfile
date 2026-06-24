@@ -1,0 +1,20 @@
+{
+    email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+    encode gzip zstd
+
+    handle /v1/api/* {
+        reverse_proxy server:4056
+    }
+    handle /api-docs/* {
+        reverse_proxy server:4056
+    }
+    handle /socket.io/* {
+        reverse_proxy server:4056
+    }
+    handle {
+        reverse_proxy client:80
+    }
+}

@@ -10,12 +10,14 @@ import { selectAllGuess, selectMyHand } from '@/store';
 import { selectMyRevealedHand } from '@/store/selectors/game';
 import { StartReadyButton, BettingDisplay, DeclareTimer, ShowdownResult } from './components/';
 import { useRoomEmitting } from './hooks/useRoomEmitting';
+import { useParams } from 'react-router';
 
 export const Room = () => {
   const cardRefs = useRef<Map<string, HTMLElement>>(new Map());
   const guess = useAppSelector(selectAllGuess);
   const myHand = useAppSelector(selectMyHand);
   const myRevealedHand = useAppSelector(selectMyRevealedHand);
+  const params = useParams();
 
   const playerCards = useMemo(() => myRevealedHand?.cards ?? myHand?.cards ?? [], [myRevealedHand?.cards, myHand?.cards]);
   const { cardTranslates } = useRoomStore();
@@ -48,6 +50,7 @@ export const Room = () => {
       onDragEnd={handleDragEnd}
     >
       <div className={styles.container}>
+        <span className={styles.roomId}>Room ID: {params.roomId ?? ''}</span>
         <div className={styles.deckSection}>
           <ShowdownResult />
           <StartReadyButton />

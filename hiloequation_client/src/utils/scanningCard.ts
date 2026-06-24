@@ -33,8 +33,7 @@ function collectOperandsAndOperators(cards: CardData[]): { operands: Operand[]; 
 function evaluate(operands: Operand[], operators: CardData[]): number {
     if (operands.length === 0) return 0;
 
-    const values = [operands[0].value];
-    const lowOps: Array<'+' | '-'> = [];
+    let total = operands[0].value;
 
     for (let i = 0; i < operators.length; i++) {
         const op = operators[i];
@@ -42,20 +41,17 @@ function evaluate(operands: Operand[], operators: CardData[]): number {
         const symbol = op.type === 'multiply' ? '×' : (op.operation ?? '+');
 
         if (symbol === '×') {
-            values[values.length - 1] *= rightVal;
+            total *= rightVal;
         } else if (symbol === '÷') {
             if (rightVal === 0) continue; // no-op: division by zero, carry left value forward
-            values[values.length - 1] /= rightVal;
+            total /= rightVal;
+        } else if (symbol === '+') {
+            total += rightVal;
         } else {
-            lowOps.push(symbol as '+' | '-');
-            values.push(rightVal);
+            total -= rightVal;
         }
     }
 
-    let total = values[0];
-    for (let i = 0; i < lowOps.length; i++) {
-        total = lowOps[i] === '+' ? total + values[i + 1] : total - values[i + 1];
-    }
     return total;
 }
 

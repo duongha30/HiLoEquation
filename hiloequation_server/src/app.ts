@@ -11,7 +11,7 @@ import swaggerSpec from './utils/swagger';
 
 const app = express();
 
-app.use(cors({ origin: 'http://localhost:3000', methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'], credentials: true }));
+app.use(cors({ origin: process.env.ALLOWED_ORIGIN || 'http://localhost:3000', methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'], credentials: true }));
 app.use(morgan('dev'));
 app.use(helmet());
 app.use(compression());

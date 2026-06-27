@@ -5,7 +5,7 @@ import registerHandlers from './index';
 const initialSocket = (server: HttpServer) => {
     const io = new Server(server, {
         cors: {
-            origin: 'http://localhost:3000',
+            origin: process.env.ALLOWED_ORIGIN || 'http://localhost:3000',
             methods: ['GET', 'POST'],
             credentials: true,
         },

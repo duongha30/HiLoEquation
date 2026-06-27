@@ -1,0 +1,53 @@
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN}
+    depends_on:
+      - client
+      - server
+
+  client:
+    build:
+      context: ./hiloequation_client
+    restart: unless-stopped
+    # nginx reverse-proxies /v1/api, /api-docs, /socket.io to the backend,
+    # so the server must be resolvable when nginx starts.
+    depends_on:
+      - server
+
+  server:
+    build:
+      context: ./hiloequation_server
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 4056
+      ALLOWED_ORIGIN: https://${DOMAIN}
+      DB_PROD_HOST: mongo
+      DB_PROD_PORT: 27017
+      DB_PROD_NAME: mongoHilo_prod
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      - mongo
+      - redis
+
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    # No published ports — reachable only on the internal network.
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+
+volumes:
+  mongo_data:
+  redis_data:

@@ -13,8 +13,6 @@ services:
     build:
       context: ./hiloequation_client
     restart: unless-stopped
-    # nginx reverse-proxies /v1/api, /api-docs, /socket.io to the backend,
-    # so the server must be resolvable when nginx starts.
     depends_on:
       - server
 
@@ -40,7 +38,6 @@ services:
     restart: unless-stopped
     volumes:
       - mongo_data:/data/db
-    # No published ports — reachable only on the internal network.
 
   redis:
     image: redis:7-alpine

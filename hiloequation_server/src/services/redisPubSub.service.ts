@@ -10,9 +10,10 @@ class RedisPubSubService implements IRedisPubSubService {
     private dataClient: RedisClient;
 
     constructor() {
-        this.publisher = createClient();
-        this.subscriber = createClient();
-        this.dataClient = createClient();
+        const url = `redis://${process.env.REDIS_HOST || '127.0.0.1'}:${process.env.REDIS_PORT || 6379}`;
+        this.publisher = createClient({ url });
+        this.subscriber = createClient({ url });
+        this.dataClient = createClient({ url });
 
         this.publisher.on('error', (err) => console.error('Publisher error:', err));
         this.subscriber.on('error', (err) => console.error('Subscriber error:', err));

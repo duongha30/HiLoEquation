@@ -26,9 +26,9 @@ services:
       NODE_ENV: production
       PORT: 4056
       ALLOWED_ORIGIN: https://${DOMAIN}
-      DB_PROD_HOST: mongo
+      DB_PROD_HOST: host.docker.internal
       DB_PROD_PORT: 27017
-      DB_PROD_NAME: mongoHilo_prod
+      DB_PROD_NAME: hiloequation_prod
       REDIS_HOST: redis
       REDIS_PORT: 6379
     depends_on:

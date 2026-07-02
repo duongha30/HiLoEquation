@@ -50,7 +50,10 @@ export const Signup = () => {
     const handleSubmit = async (values: SignupFormValues, { setSubmitting }: any) => {
         try {
             const { username, email, password } = values;
-            await dispatch(signupThunk({ username, email, password }));
+            const result = await dispatch(signupThunk({ username, email, password }));
+            if (signupThunk.fulfilled.match(result)) {
+                navigate(url.home);
+            }
         } catch (error) {
             console.error('Signup failed:', error)
         } finally {
